@@ -1,10 +1,12 @@
 ternpy
 --------
 To install latest stable version
-$ pip install --user ternpy
+.. code:: bash
+pip install --user ternpy
 
 or if you feel brave:
-$ pip install ternpy
+.. code:: bash
+pip install ternpy
 
 To use, simply do::
 
