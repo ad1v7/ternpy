@@ -16,3 +16,6 @@ To use, simply do::
 Or from terminal::
 
     ternpy
+
+..note::
+    This is a note...
