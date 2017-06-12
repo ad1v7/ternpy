@@ -1,7 +1,0 @@
-ternget
---------
-
-To use, simply do::
-
-    >>> import ternget
-    >>> ternget.joke()
