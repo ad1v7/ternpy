@@ -14,4 +14,5 @@ To use, simply do::
     >>> ternpy.joke()
 
 Or from terminal::
+
     ternpy
