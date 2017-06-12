@@ -17,5 +17,6 @@ Or from terminal::
 
     ternpy
 
+Text..
 .. note::
     This is a note...
