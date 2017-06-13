@@ -4,9 +4,10 @@ import sys
 import os
 import time
 import math
+import re
+
 from scipy.spatial import ConvexHull
 from matplotlib.tri import Triangulation
-import re
 
 # consider adding title
 # where corner labels are comming from
@@ -156,9 +157,12 @@ class FindMetastable:
     def __init__(self, CHD):
         self.hulls = CHD.convex_hulls
         self.data = CHD.data
+        # below all have the same order and
+        # should have the same number of elements
         self.vertices = self.get_all_vertices()
         self.points = self.get_all_points()
         self.metastable = self.get_all_metastable()
+        self.triangles = self.get_all_triangles()
 
     def get_all_vertices(self):
         vertices = []
@@ -201,9 +205,57 @@ class FindMetastable:
         if not found_one:
             metastable.append(p)
 
+    # returns distance between point and plane ABC
+    def point_distance_to_plane(self, point, A, B, C):
+        nhat = self.norm_to_plane(A, B, C)
+        return np.dot(p, nhat)
+
+    # returns unit vector normal to plane
+    def norm_to_plane(self, A, B, C):
+        v1 = A - B
+        v2 = A - C
+        nhat = np.cross(v1, v2)
+        return self.vec_to_unitvec(nhat)
+
+    # converts given vector to unit vector
+    def vec_to_unitvec(self, vec):
+        return vec / np.sqrt(np.dot(vec, vec))
+
+    def is_point_on_line(self, point, A, B):
+        print 'Hello'
+
+    # this does not work
+    def is_point_in_triangle(self, point, A, B, C):
+        hull = ConvexHull(np.array([point[:2], A[:2], B[:2], C[:2]]))
+        print len(hull.vertices)
+
+    def get_all_triangles(self):
+        all_triangles = []
+        for data, hull in zip(self.data, self.hulls):
+            triangles = []
+            for simplex in hull.simplices:
+                A, B, C = data[simplex]
+                triangles.append([A, B, C])
+            all_triangles.append(triangles)
+        return np.array(all_triangles)
 
 if __name__ == '__main__':
     hull = ConvexHullData(sys.argv[1:])
     hull_plotter = PlotConvexHull(hull, steps=12)
     hull_plotter.plot_all(hull)
     MS = FindMetastable(hull)
+    point = np.array([1.5, 0.5, 0])
+    A = np.array([0, 0, 0])
+    B = np.array([1, 0, 0])
+    C = np.array([0.5, 1, 0])
+
+    point = MS.metastable[0][0]
+    A = MS.triangles[0][0][0]
+    B = MS.triangles[0][0][1]
+    C = MS.triangles[0][0][2]
+    print point
+    print A
+    print B
+    print C
+
+    print(MS.is_point_in_triangle(point, A, B, C))
