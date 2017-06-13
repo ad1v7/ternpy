@@ -62,8 +62,8 @@ class ConvexHullData:
 
 
 class PlotConvexHull:
-    def __init__(self, ConvexHullData, **kwargs):
-        self.CHD = ConvexHullData
+    def __init__(self, CHD, **kwargs):
+        self.CHD = CHD
         self.steps = kwargs.get('steps', 15)
         self.showaxis = kwargs.get('showaxis', 'off')
         self.showpressure = kwargs.get('showpressure', True)
@@ -152,7 +152,58 @@ class PlotConvexHull:
             plt.show()
 
 
+class FindMetastable:
+    def __init__(self, CHD):
+        self.hulls = CHD.convex_hulls
+        self.data = CHD.data
+        self.vertices = self.get_all_vertices()
+        self.points = self.get_all_points()
+        self.metastable = self.get_all_metastable()
+
+    def get_all_vertices(self):
+        vertices = []
+        for i, entry in enumerate(self.data):
+            vertices.append(entry[self.hulls[i].vertices])
+        return vertices
+
+    def get_all_points(self):
+        points = []
+        for hull in self.hulls:
+            points.append(hull.points)
+        return points
+
+    def get_all_metastable(self):
+        metastable = []
+        for i, vertices in enumerate(self.vertices):
+            metastable.append(self.get_metastable(vertices, self.points[i]))
+        return np.array(metastable)
+
+    def get_metastable(self, vertices, points):
+        metastable = []
+        for p in points:
+            if not self.is_point_in_arr(p, vertices):
+                self.is_smallest(p, metastable)
+        return metastable
+
+    def is_point_in_arr(self, p, arr):
+        for entry in arr:
+            if (entry[0] == p[0]) and (entry[1] == p[1]):
+                return True
+        return False
+
+    def is_smallest(self, p, metastable):
+        found_one = False
+        for meta in metastable:
+            if (p[0] == meta[0]) and (p[1] == meta[1]):
+                if p[2] < meta[2]:
+                    meta[2] = p[2]
+                found_one = True
+        if not found_one:
+            metastable.append(p)
+
+
 if __name__ == '__main__':
     hull = ConvexHullData(sys.argv[1:])
     hull_plotter = PlotConvexHull(hull, steps=12)
     hull_plotter.plot_all(hull)
+    MS = FindMetastable(hull)
