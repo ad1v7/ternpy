@@ -152,7 +152,9 @@ class PlotConvexHull:
         if self.showfig:
             plt.show()
 
-
+# Class to find and hold metastable points
+# together with relevant functions
+# such as finding decomposition reaction and its strength
 class FindMetastable:
     def __init__(self, CHD):
         self.hulls = CHD.convex_hulls
@@ -165,24 +167,28 @@ class FindMetastable:
         self.metastable = self.get_all_metastable()
         self.triangles = self.get_all_triangles()
 
+    # returns array of convex hull vertices
     def get_all_vertices(self):
         vertices = []
         for i, entry in enumerate(self.data):
             vertices.append(entry[self.hulls[i].vertices])
         return vertices
 
+    # returns array of all points used to compute convex hull
     def get_all_points(self):
         points = []
         for hull in self.hulls:
             points.append(hull.points)
         return points
 
+    # returns array of all metastable points 
     def get_all_metastable(self):
         metastable = []
         for i, vertices in enumerate(self.vertices):
             metastable.append(self.get_metastable(vertices, self.points[i]))
         return np.array(metastable)
 
+    # returns array of metastable points for a given configuration
     def get_metastable(self, vertices, points):
         metastable = []
         for p in points:
@@ -190,12 +196,17 @@ class FindMetastable:
                 self.is_smallest(p, metastable)
         return metastable
 
+    # 2D test is pont in array; only x,y coords are used
     def is_point_in_arr(self, p, arr):
         for entry in arr:
             if (entry[0] == p[0]) and (entry[1] == p[1]):
                 return True
         return False
 
+    # test is point already in metastable array
+    # by comparing x and y coords
+    # if found it tests for value of z components
+    # the point with lowest z component is saved in metastable
     def is_smallest(self, p, metastable):
         found_one = False
         for meta in metastable:
@@ -219,14 +230,26 @@ class FindMetastable:
         nhat = np.cross(v1, v2)
         return self.vec_to_unitvec(nhat)
 
-    #from numpy import linalg as LA
     # point distance to line in 3D
+    # can also return position on the line
+    # http://www.fundza.com/vectors/point2line/index.html
     def point_distance_to_line(self, point, line):
         A, B = line
-        line_vec = A - B
-        point_vec = A - point
-        np.linalg.norm(point_vec)
-
+        line_vec = B - A
+        point_vec = point - A
+        linelength = np.linalg.norm(line_vec)
+        line_unitvec = self.vec_to_unitvec(line_vec)
+        point_vec_scaled = 1/linelength * point_vec
+        test = np.dot(line_unitvec, point_vec_scaled)
+        if test < 0.:
+            test = 0.
+        elif test > 1.:
+            test = 1.
+        nearest = test * line_vec
+        dist = np.linalg.norm(nearest-point_vec)
+        nearest = nearest + A
+        return (dist, nearest)
+        #return dist
 
     # converts given vector to unit vector
     def vec_to_unitvec(self, vec):
@@ -260,7 +283,7 @@ class FindMetastable:
         else:
             return False, []
 
-    # returns true if point is inside triangle OR ON triangle side
+    # returns true either if point is inside triangle OR on triangle side
     def is_point_in_triangle(self, point, tri):
         A, B, C = tri
         if (self.same_side(point, A, B, C) and self.same_side(point, B, A, C)
@@ -279,6 +302,8 @@ class FindMetastable:
         else:
             return False, []
 
+    # tests are points p1 and p2 on the same side
+    # of the line segment ab
     def same_side(self, p1, p2, a, b):
         cp1 = np.cross(b[:2]-a[:2], p1[:2]-a[:2])
         cp2 = np.cross(b[:2]-a[:2], p2[:2]-a[:2])
@@ -287,20 +312,35 @@ class FindMetastable:
         else:
             return False
 
+    # returns array of convex hull triangles (simplices)
+    # triangles which are perpendicular to the z=0 plane are removed
+    # in other words only triangles from the projection onto
+    # z plane are saved.
+    # Also in case where # of triangles > 1 the triangle which corresponds
+    # to ternary diagram vertices is removed to simplify later calculations
     def get_all_triangles(self):
         all_triangles = []
         for data, hull in zip(self.data, self.hulls):
             triangles = []
+            counter = 0
             for simplex in hull.simplices:
                 A, B, C = data[simplex]
                 if not self.is_collinear2D(A, B, C):
                     triangles.append([A, B, C])
+                    counter += 1
+            if counter > 1:
+                triangles = np.delete(triangles,obj=triangles[0], axis=0)
             all_triangles.append(triangles)
         return np.array(all_triangles)
 
     # find relevant decomposition reaction
     # aka find triangle or triangle edge to which point belongs to
     # from the set of all triangles
+    #
+    # THIS FUNCTION NEEDS OUTPUT TO BE FORMATTED
+    #
+    # ISSUE: if decomposition line is shared by two triangles
+    # function will print the same line twice
     def find_decomposition(self, point, tri_set):
         for tri in tri_set:
             tribool, triangle = self.is_point_inside_triangle(point, tri)
@@ -314,11 +354,18 @@ class FindMetastable:
             elif linebool:
                 print 'Line:'
                 print line
+                print 'Distance:'
+                print self.point_distance_to_line(point, line[1:])
                 print('--------------')
+                # this is because line can be shared by more than one triangle
+                break
 
     # currently prints all metastable points at a given pressure
     # and relevant decomopostion reaction
     # (and loop is over pressures/files)
+    #
+    # THIS FUNCTION NEEDS OUTPUT TO BE FORMATTED
+    #
     def find_all_decomposition(self):
         for points, press, tri_set in zip(self.metastable, self.pressures,
                                           self.triangles):
@@ -328,20 +375,29 @@ class FindMetastable:
             for point in points:
                 self.find_decomposition(point, tri_set)
 
+    # function finds phase name given
+    # numpy array (x,y) coordinate
+    #
+    # ? where are phase names comming from ?
+    #
+    # in fact this helper function is likely to be
+    # usefull for many other situations so it should go to utils
+    def xy_to_name(self, point):
+        return 'Hmmmpff'
 
-    # think how to convert cartesian coords to phase names
+
 
 if __name__ == '__main__':
     hull = ConvexHullData(sys.argv[1:])
     hull_plotter = PlotConvexHull(hull, steps=12)
     hull_plotter.plot_all(hull)
     MS = FindMetastable(hull)
-    point = np.array([1.5, 0.5, 0])
-    A = np.array([0, 0, 0])
-    B = np.array([1, 0, 0])
+    point = np.array([1, .5, 1])
+    A = np.array([0.33, 0.33, 0.33])
+    B = np.array([1., 1., 1.])
     C = np.array([0.5, 1, 0])
 
-    point = MS.metastable[0][0]
+    #point = MS.metastable[0][0]
     #point = MS.vertices[0][2]
     #A = MS.triangles[0][0][0]
     #B = MS.triangles[0][0][1]
@@ -363,3 +419,4 @@ if __name__ == '__main__':
     print MS.metastable
     print('xxxxxxxx')
     MS.find_all_decomposition()
+    #print MS.point_distance_to_line(point, np.array([A, B]))
