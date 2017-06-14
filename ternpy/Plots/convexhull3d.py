@@ -157,6 +157,7 @@ class FindMetastable:
     def __init__(self, CHD):
         self.hulls = CHD.convex_hulls
         self.data = CHD.data
+        self.pressures = CHD.pressures
         # below all have the same order and
         # should have the same number of elements
         self.vertices = self.get_all_vertices()
@@ -206,28 +207,85 @@ class FindMetastable:
             metastable.append(p)
 
     # returns distance between point and plane ABC
-    def point_distance_to_plane(self, point, A, B, C):
-        nhat = self.norm_to_plane(A, B, C)
-        return np.dot(p, nhat)
+    def point_distance_to_plane(self, point, tri):
+        nhat = self.norm_to_plane(tri)
+        return abs(np.dot(point, nhat))
 
     # returns unit vector normal to plane
-    def norm_to_plane(self, A, B, C):
+    def norm_to_plane(self, tri):
+        A, B, C = tri
         v1 = A - B
         v2 = A - C
         nhat = np.cross(v1, v2)
         return self.vec_to_unitvec(nhat)
 
+    #from numpy import linalg as LA
+    # point distance to line in 3D
+    def point_distance_to_line(self, point, line):
+        A, B = line
+        line_vec = A - B
+        point_vec = A - point
+        np.linalg.norm(point_vec)
+
+
     # converts given vector to unit vector
     def vec_to_unitvec(self, vec):
         return vec / np.sqrt(np.dot(vec, vec))
 
-    def is_point_on_line(self, point, A, B):
-        print 'Hello'
+    # return true if points in 2D are collinear
+    # ignore z coordinate
+    def is_collinear2D(self, A, B, C):
+        x1, y1 = B[0] - A[0], B[1] - A[1]
+        x2, y2 = C[0] - A[0], C[1] - A[1]
+        return abs(x1 * y2 - x2 * y1) == 0
 
-    # this does not work
-    def is_point_in_triangle(self, point, A, B, C):
-        hull = ConvexHull(np.array([point[:2], A[:2], B[:2], C[:2]]))
-        print len(hull.vertices)
+    # returns true if point is on AB line segment
+    # in 2D (ignore z coordinate)
+    def is_point_between(self, point, A, B):
+        dotproduct = np.dot(B-A, point-A)
+        sqlengthAB = (B[0]-A[0])*(B[0]-A[0]) + (B[1]-A[1])*(B[1]-A[1])
+        return (abs(np.cross(A-point, B-point)) == 0 and
+                dotproduct > 0 and sqlengthAB > dotproduct)
+
+    # returns true if point is found on one of triangle
+    # edges and relevant vertices in 2D (ignore z coord)
+    def is_point_on_tri_edge(self, point, tri):
+        A, B, C = tri
+        if self.is_point_between(point[:2], A[:2], B[:2]):
+            return True, [point, A, B]
+        elif self.is_point_between(point[:2], B[:2], C[:2]):
+            return True, [point, B, C]
+        elif self.is_point_between(point[:2], A[:2], C[:2]):
+            return True, [point, A, C]
+        else:
+            return False, []
+
+    # returns true if point is inside triangle OR ON triangle side
+    def is_point_in_triangle(self, point, tri):
+        A, B, C = tri
+        if (self.same_side(point, A, B, C) and self.same_side(point, B, A, C)
+                and self.same_side(point, C, A, B)):
+            return True, [point, A, B, C]
+        else:
+            return False, []
+
+    # return true only if point is inside triangle but NOT on its edges
+    def is_point_inside_triangle(self, point, tri):
+        A, B, C = tri
+        intribool, temp = self.is_point_in_triangle(point, tri)
+        ontriedgebool, temp2 = self.is_point_on_tri_edge(point, tri)
+        if intribool and not ontriedgebool:
+            return True, [point, A, B, C]
+        else:
+            return False, []
+
+    def same_side(self, p1, p2, a, b):
+        cp1 = np.cross(b[:2]-a[:2], p1[:2]-a[:2])
+        cp2 = np.cross(b[:2]-a[:2], p2[:2]-a[:2])
+        if np.dot(cp1, cp2) >= 0:
+            return True
+        else:
+            return False
 
     def get_all_triangles(self):
         all_triangles = []
@@ -235,9 +293,43 @@ class FindMetastable:
             triangles = []
             for simplex in hull.simplices:
                 A, B, C = data[simplex]
-                triangles.append([A, B, C])
+                if not self.is_collinear2D(A, B, C):
+                    triangles.append([A, B, C])
             all_triangles.append(triangles)
         return np.array(all_triangles)
+
+    # find relevant decomposition reaction
+    # aka find triangle or triangle edge to which point belongs to
+    # from the set of all triangles
+    def find_decomposition(self, point, tri_set):
+        for tri in tri_set:
+            tribool, triangle = self.is_point_inside_triangle(point, tri)
+            linebool, line = self.is_point_on_tri_edge(point, tri)
+            if tribool:
+                print 'Triangle:'
+                print triangle
+                print 'Distance:'
+                print self.point_distance_to_plane(point, triangle[1:])
+                print('--------------')
+            elif linebool:
+                print 'Line:'
+                print line
+                print('--------------')
+
+    # currently prints all metastable points at a given pressure
+    # and relevant decomopostion reaction
+    # (and loop is over pressures/files)
+    def find_all_decomposition(self):
+        for points, press, tri_set in zip(self.metastable, self.pressures,
+                                          self.triangles):
+            print('-------')
+            print(press)
+            print('-------')
+            for point in points:
+                self.find_decomposition(point, tri_set)
+
+
+    # think how to convert cartesian coords to phase names
 
 if __name__ == '__main__':
     hull = ConvexHullData(sys.argv[1:])
@@ -250,12 +342,24 @@ if __name__ == '__main__':
     C = np.array([0.5, 1, 0])
 
     point = MS.metastable[0][0]
-    A = MS.triangles[0][0][0]
-    B = MS.triangles[0][0][1]
-    C = MS.triangles[0][0][2]
-    print point
-    print A
-    print B
-    print C
+    #point = MS.vertices[0][2]
+    #A = MS.triangles[0][0][0]
+    #B = MS.triangles[0][0][1]
+    #C = MS.triangles[0][0][2]
+    #print point
+    #print A
+    #print B
+    #print C
 
-    print(MS.is_point_in_triangle(point, A, B, C))
+    #tri = MS.triangles[0][0]
+    #print(MS.is_point_on_tri_edge(point, tri))
+    #print(MS.is_point_in_triangle(point, A, B, C))
+    #print(MS.is_point_inside_triangle(point, tri))
+    #print("----------------")
+    #print(MS.is_point_between(point[:2], B[:2], C[:2]))
+    #for point in MS.metastable[1]:
+    #    print 'Point is: ', point, '\n'
+    #    MS.find_decomposition(point)
+    print MS.metastable
+    print('xxxxxxxx')
+    MS.find_all_decomposition()
