@@ -6,39 +6,65 @@ from collections import OrderedDict
 #import sys
 
 allphases = {'Brucite': {'atoms': ['Mg', 'O', 'H'], 'natoms': [1, 2, 2],
-                      'Structures': {'plotname': ['P4', 'P3']}},
+                      'Structures': {'name': ['P4', 'P3']}},
           'Enstatite': {'atoms': ['Mg', 'Si', 'O'], 'natoms': [1, 1, 3],
-                        'Structures': {'plotname': ['Bridgmanite',
-                                                    'Clinoenstatite',
-                                                    'HP-clino',
-                                                    'ilmenite',
-                                                    'ortho']}},
+                        'Structures': {'name': ['Bridgmanite',
+                                                    'clino',
+                                                    'ilmenite']}},
           'PhaseB': {'atoms': ['Mg', 'Si', 'O', 'H'], 'natoms': [12, 4, 21, 2],
-                     'Structures': {'plotname': ['Phase B_struct']}},
+                     'Structures': {'name': ['PhaseB']}},
           'SiO2': {'atoms': ['Si', 'O'], 'natoms': [1, 2], 'Structures':
-                   {'plotname': ['alpha', 'coe', 'stishovite']}},
+                   {'name': ['alpha',  'stishovite']}},
           'MgO': {'atoms': ['Mg', 'O'], 'natoms': [1, 1], 'Structures':
-                  {'plotname': ['MgO']}},
+                  {'name': ['MgO']}},
           'H2O': {'atoms': ['O', 'H'], 'natoms': [1, 2], 'Structures':
-                  {'plotname': ['H2O']}}}
+                  {'name': ['Ice8']}}}
 
 ternary = ['MgO', 'SiO2', 'H2O']
+p4 = np.genfromtxt('P4.dat', names=True)
+data = {'Brucite': {'P3': p4, 'P4': []}}
 
+print data['Brucite']['P3']['H']
 
 class InputGenerator:
 
+    # allphases = dict created during data extraction from the VASP run
+    # ternary = list of names for ternary corners (e.g. 'Mgo')
+    # names must match names in allphases dict
+    # list order is as follows
+    # ['a', 'b', 'c'] corresponds to:
+    #                c
+    #               a b
     def __init__(self, allphases, ternary):
         self.allphases = allphases
+        self.ternary = ternary
         self.tern_phases, self.compositions = self.get_phases(ternary)
-        print self.compositions
+        coords = self.get_coords()
+        for phase, comp, xy in zip(self.tern_phases, self.compositions, coords):
+            self.tern_phases[phase]['comp'] = comp
+            self.tern_phases[phase]['coord'] =xy
         print '++++++++++++++++'
         print self.tern_phases.keys()
+        #print self.tern_phases
         print '++++++++++++++++'
-        print self.get_coords()
         #mydata = self.get_phase_data(['SiO2', 'MgO', 'H2O', 'Brucite'])
         #print balance_interface(mydata, 3)
+        self.load_data()
+
+        
+    def load_data(self):
+        newdata = OrderedDict() # just in case
+        for phase in self.tern_phases.keys():
+            for poly in self.tern_phases[phase]['Structures']['name']:
+                try:
+                    filename = poly+'.dat'
+                    newdata[phase] = {poly: np.genfromtxt(filename, names=True)}
+                except IOError:
+                    print 'no file for', poly
+        return newdata
 
     # returns all phases within ternary diagram
+    # AND phase decomposition wrt to ternary corners
     def get_phases(self, ternary):
         phases = []
         composition = []
@@ -50,7 +76,8 @@ class InputGenerator:
         return self.get_phase_data(phases), composition
 
     # returns True if phase is found in ternary list
-    # and list representing its decompostion reaction
+    # AND integer list representing its decompostion reaction
+    # within given ternary diagram
     # phase is a string
     # ternary is a list of strings
     def is_phase_in_ternary(self, phase, ternary):
@@ -73,15 +100,15 @@ class InputGenerator:
     # returns 'full' phase record given list of phase names
     def get_phase_data(self, phaselist):
         phase_dict = OrderedDict()
-        for corner in phaselist:
+        for phase in phaselist:
             try:
-                phase_dict[corner] = self.allphases[corner]
+                phase_dict[phase] = self.allphases[phase]
             except KeyError:
-                print('No key in main dict: '+corner)
+                print('No key in main dict: ' + phase)
         return phase_dict
 
     # returns list of (x,y) pairs
-    # order of pairs match order in config file
+    # same order as phases, compositions, etc
     def get_coords(self):
         coords = []
         for c in self.compositions:
@@ -103,8 +130,25 @@ class InputGenerator:
     #####################################################
 
     # returns enthalpy of formation per molecule
-    # p - index of pressure point, i row of phase in config file
-    # a,b,c are h of constituents times number of molecules/atoms
+    # p - index of pressure point
+    # a,b,c are h of constituents times number of molecules(or atoms)
+    def enthalpy_of_formation(self, p, phase, poly):
+        num_of_molecules = sum(self.tern_phases[phase]['comp'])
+        abc = self.tern_phases[phase]['comp']
+        a = self.get_most_stable(self.ternary[0], p)
+        b = self.get_most_stable(self.ternary[1], p)
+        c = self.get_most_stable(self.ternary[2], p)
+        a = abc[0]*a
+        b = abc[1]*b
+        c = abc[2]*c
+        phase = self.data[phase][poly]['H'][p]
+        enthalpy = (phase-a-b-c)/num_of_molecules
+        return enthalpy
+
+    def get_most_stable(self, phase, p):
+        return min([h for h in self.data[phase]])
+
+    '''
     def enthalpy_of_formation(self, p, i):
         num_of_molecules = (
             self.config[i][0] + self.config[i][1] + self.config[i][2])
@@ -113,16 +157,8 @@ class InputGenerator:
         c = self.config[i][2]*self.data[p][3]
         phase = self.data[p][i+1]
         enthalpy = (phase-a-b-c)/num_of_molecules
-        # Below is needed to avoid later issues when generating
-        # ternary graphs. The problem is that tricontour plot
-        # goes wild when enthalpy is close to zero so better remove it
-        #if enthalpy < -0.001:
-        #    return enthalpy
-        #elif enthalpy == 0:
-        #    return 0.0
-        #else:
-        #    return 0.1
         return enthalpy
+    '''
 
     # returns array containing enthalpies
     # of formation for all phases
