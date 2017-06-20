@@ -1,25 +1,106 @@
 import numpy as np
-import sys
+from Plots.phase import balance
+from Plots.phase import balance_interface
+from Plots.phase import get_balance_matrix
+from collections import OrderedDict
+#import sys
+
+allphases = {'Brucite': {'atoms': ['Mg', 'O', 'H'], 'natoms': [1, 2, 2],
+                      'Structures': {'plotname': ['P4', 'P3']}},
+          'Enstatite': {'atoms': ['Mg', 'Si', 'O'], 'natoms': [1, 1, 3],
+                        'Structures': {'plotname': ['Bridgmanite',
+                                                    'Clinoenstatite',
+                                                    'HP-clino',
+                                                    'ilmenite',
+                                                    'ortho']}},
+          'PhaseB': {'atoms': ['Mg', 'Si', 'O', 'H'], 'natoms': [12, 4, 21, 2],
+                     'Structures': {'plotname': ['Phase B_struct']}},
+          'SiO2': {'atoms': ['Si', 'O'], 'natoms': [1, 2], 'Structures':
+                   {'plotname': ['alpha', 'coe', 'stishovite']}},
+          'MgO': {'atoms': ['Mg', 'O'], 'natoms': [1, 1], 'Structures':
+                  {'plotname': ['MgO']}},
+          'H2O': {'atoms': ['O', 'H'], 'natoms': [1, 2], 'Structures':
+                  {'plotname': ['H2O']}}}
+
+ternary = ['MgO', 'SiO2', 'H2O']
 
 
 class InputGenerator:
-    #print data['O']
-    #print data.dtype.names
 
-    def __init__(self, config, data):
-        self.config = config
-        self.data = data
-        self.coords = self.get_coords()
+    def __init__(self, allphases, ternary):
+        self.allphases = allphases
+        self.tern_phases, self.compositions = self.get_phases(ternary)
+        print self.compositions
+        print '++++++++++++++++'
+        print self.tern_phases.keys()
+        print '++++++++++++++++'
+        print self.get_coords()
+        #mydata = self.get_phase_data(['SiO2', 'MgO', 'H2O', 'Brucite'])
+        #print balance_interface(mydata, 3)
+
+    # returns all phases within ternary diagram
+    def get_phases(self, ternary):
+        phases = []
+        composition = []
+        for phase in self.allphases.keys():
+            test, arr = self.is_phase_in_ternary(phase, ternary)
+            if test:
+                phases.append(phase)
+                composition.append(arr)
+        return self.get_phase_data(phases), composition
+
+    # returns True if phase is found in ternary list
+    # and list representing its decompostion reaction
+    # phase is a string
+    # ternary is a list of strings
+    def is_phase_in_ternary(self, phase, ternary):
+        if phase in ternary:
+            idx = ternary.index(phase)
+            if idx == 0:
+                arr = [1, 0, 0]
+            elif idx == 1:
+                arr = [0, 1, 0]
+            elif idx == 2:
+                arr = [0, 0, 1]
+            return True, arr
+        else:
+            temp = ternary[:]
+            temp.append(phase)
+            data = self.get_phase_data(temp)
+            test, arr = balance_interface(data, 3)
+            return test, arr[:3]
+
+    # returns 'full' phase record given list of phase names
+    def get_phase_data(self, phaselist):
+        phase_dict = OrderedDict()
+        for corner in phaselist:
+            try:
+                phase_dict[corner] = self.allphases[corner]
+            except KeyError:
+                print('No key in main dict: '+corner)
+        return phase_dict
 
     # returns list of (x,y) pairs
     # order of pairs match order in config file
     def get_coords(self):
         coords = []
-        for line in self.config:
-            x = 0.5 * (2. * line[1] + line[2]) / (line[0] + line[1] + line[2])
-            y = np.sqrt(3) / 2. * line[2] / (line[0] + line[1] + line[2])
+        for c in self.compositions:
+            x = 0.5 * (2. * c[1] + c[2]) / (c[0] + c[1] + c[2])
+            y = np.sqrt(3) / 2. * c[2] / (c[0] + c[1] + c[2])
             coords.append((x, y))
         return coords
+
+    #####################################################
+    #                                                   #
+    #  This is it so far, above should work             #
+    #                                                   #
+    #     Below still needs changes                     #
+    #      to proceed further you will need to create   #
+    #                                                   #
+    #       simple database file and load it with       #
+    #       genfromtext                                 #
+    #                                                   #
+    #####################################################
 
     # returns enthalpy of formation per molecule
     # p - index of pressure point, i row of phase in config file
@@ -73,6 +154,9 @@ class InputGenerator:
                 header = str(rows)+' '+p+'\n'
                 np.savetxt(p+'.in', arr, header=header, fmt=['%.15f', '%.15f', '%.15f'])
 
+if __name__ == '__main__':
+    print 'Test'
+    IG = InputGenerator(allphases, ternary)
 #data = np.genfromtxt(sys.argv[1], names=True)
 #config = np.genfromtxt(sys.argv[2], usecols=(1, 2, 3))
 #IG = InputGenerator(config, data)

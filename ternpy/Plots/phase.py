@@ -24,7 +24,8 @@ from sympy import Matrix
 import numpy.linalg as l
 from fractions import Fraction
 import functools
-
+import math
+from collections import OrderedDict
 
 # name can come from directory name
 # formula from CONTCAR
@@ -154,15 +155,22 @@ def balance(mtx):
     # extract rightmost column and convert to list
     solution = (flatten(mtx[..., cols-1].tolist()))
     # divide each element by abs of min value in the column
-    solution = [abs(item) for item in solution]
-    print 'This is a non integer solution:'
-    print solution
+    #solution = [abs(item) for item in solution]
+    #print 'This is a non integer solution:'
+    #print solution
     # convert floats to fractions and list all denominators
     denoms = [Fraction(x).limit_denominator().denominator for x in solution]
     # find the least common multiple from the denoms list
     factor = functools.reduce(lambda a, b: a*b//gcd(a, b), denoms)
-    print 'This is an integer solution:'
-    print [int(round(factor*item)) for item in solution]
+    #print 'This is an integer solution:'
+    solution = [int(round(factor*item)) for item in solution]
+    #print solution
+    #
+    # currently return solution which contains negative numbers
+    # use balance_interface() instead
+    #
+    #
+    return solution
 
 
 # prepare matrix input for balance stoichiometry function
@@ -172,22 +180,48 @@ def balance(mtx):
 # second with sublist containg number of atoms for a given phase
 # the ordering of items in lists and sublists must correspond to each other
 # but this is guaranteed given data is extracted from CONTCAR file
-def get_balance_matrix(phases, phases_atoms):
+
+def get_balance_matrix(phases_atoms, phases_natoms):
     atomslist = []
-    for phase in phases:
-        atomslist = find_unique_atoms(phase, atomslist)
+    for atoms in phases_atoms:
+        atomslist = find_unique_atoms(atoms, atomslist)
     mtx = []
     for atom in atomslist:
         row = []
-        for phase, phase_atoms in zip(phases, phases_atoms):
-            if atom in phase:
-                idx = phase.index(atom)
+        for atoms, phase_atoms in zip(phases_atoms, phases_natoms):
+            if atom in atoms:
+                idx = atoms.index(atom)
                 row.append(phase_atoms[idx])
             else:
                 row.append(0)
         mtx.append(row)
     #print 'your matrix\n', np.matrix(mtx), '\nend'
     return np.matrix(mtx)
+
+
+# interface to balance()
+# takes dictionary of phases
+def balance_interface(dictdata, *args):
+    lhs = 0
+    for arg in args:
+        lhs = arg
+    if type(dictdata) != type(OrderedDict()):
+        print type(dictdata)
+        print('Unordered dictionary supplied. Result might be wrong!')
+    phases_atoms = [dictdata[phase]['atoms'] for phase in dictdata]
+    phases_natoms = [dictdata[phase]['natoms'] for phase in dictdata]
+    mtx = get_balance_matrix(phases_atoms, phases_natoms)
+    solution = balance(mtx)
+    # test if lhs and rhs of the equation have same signs
+    # if not then the equation can not be balanced
+    # THIS MAY NOT ALWAYS WORK: AD HOC SOLUTION
+    if ((abs(sum(solution[:lhs])) == sum([abs(i) for i in solution[:lhs]])) and
+        (abs(sum(solution[lhs:])) == sum([abs(i) for i in solution[lhs:]]))):
+        #print 'Good'
+        return True, [abs(i) for i in solution]
+    else:
+        #print 'Bad'
+        return False, []
 
 
 # return minimum value from
@@ -241,9 +275,10 @@ if __name__ == '__main__':
     #phases = [['Mg', 'O', 'H'], ['Mg', 'O'], ['H', 'O']]
     #phases_atoms = [[1, 2, 2], [1, 1], [2, 1]]
     #phases = [['Mg', 'O', 'H', 'Si'], ['Mg', 'O'], ['H', 'O'], ['Si', 'O']]
-    mtx = get_balance_matrix(phases, phases_atoms)
     print '###############'
-    balance(mtx)
+    mtx = get_balance_matrix(phases, phases_atoms)
+    print mtx
+    #balance(mtx)
     print '###############'
 
     print '------------------------'
@@ -257,8 +292,18 @@ if __name__ == '__main__':
                     [0, 3, 0, 0, 1, 0],
                     [0, 0, 1, 0, 2, 0],
                     [0, 1, 1, 0, 0, 1]])
+    def get_corners_data(self, phase_info, corners):
+        corners_dict = {}
+        for corner in corners:
+            try:
+                corners_dict[corner] = phase_info[corner]
+            except KeyError:
+                print('No key in main dict: '+corner)
+        return corners_dict
+
+
     #matrix = np.matrix(symmatrix.rref()[0])
     #matrix = np.matrix([[1,0,1],[0,2,3]])
-    #matrix = np.matrix([[2, 0, 2], [0, 2, 1]])
-    matrix = np.matrix([[7, 0, 1, 0], [6, 0, 0, 2], [2, 2, 2, 1]])
-    #balance(matrix)
+    matrix = np.matrix([[2, 0, 2], [0, 2, 1]])
+    #matrix = np.matrix([[7, 0, 1, 0], [6, 0, 0, 2], [2, 2, 2, 1]])
+    print balance(matrix)
