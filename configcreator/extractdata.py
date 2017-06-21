@@ -3,7 +3,7 @@ import os
 
 
 # Figures out the chemical formula of a VASP calculation using POTCAR and OUTCAR.
-def __vasp_chemformula(dir, outcar="OUTCAR", poscar="POSCAR"):
+def _vasp_chemformula(dir, outcar="OUTCAR", poscar="POSCAR"):
     atoms = []
     numbers = []
 
@@ -46,7 +46,7 @@ def __vasp_chemformula(dir, outcar="OUTCAR", poscar="POSCAR"):
     return chemform
 
 
-def __vasp_atoms(dir, outcar="OUTCAR"):
+def _vasp_atoms(dir, outcar="OUTCAR"):
     atoms = []
     if not os.path.isfile(dir + "/" + outcar):
         return None
@@ -58,7 +58,7 @@ def __vasp_atoms(dir, outcar="OUTCAR"):
     return atoms
 
 
-def __vasp_natoms(dir, poscar="POSCAR"):
+def _vasp_natoms(dir, poscar="POSCAR"):
     if not os.path.isfile(dir + "/" + poscar):
         return None
     with open(dir + "/" + poscar) as f:
@@ -84,12 +84,12 @@ def __vasp_natoms(dir, poscar="POSCAR"):
 
 # TODO
 # Returns the number of f.u.'s per unit cell.
-def __vasp_fu_per_ucell(dir):
+def _vasp_fu_per_ucell(dir):
     pass
 
 
 # Obtains the enthalpy term from a VASP OUTCAR file.
-def __vasp_enthalpy(dir, outcar="OUTCAR"):
+def _vasp_enthalpy(dir, outcar="OUTCAR"):
     energies = []
     if not os.path.isfile(dir + "/" + outcar):
         return None
@@ -104,15 +104,15 @@ def __vasp_enthalpy(dir, outcar="OUTCAR"):
         return None
 
 
-def __vasp_internalenergy(dir, outcar="OUTCAR"):
-    if __vasp_enthalpy(dir, outcar) is not None and __vasp_enthalpy(dir, outcar) is not None:
-        return __vasp_enthalpy(dir, outcar) - __vasp_pv(dir, outcar)
+def _vasp_internalenergy(dir, outcar="OUTCAR"):
+    if _vasp_enthalpy(dir, outcar) is not None and _vasp_enthalpy(dir, outcar) is not None:
+        return str(float(_vasp_enthalpy(dir, outcar)) - float(_vasp_pv(dir, outcar)))
     else:
         return None
 
 
 # Obtains the PV term from a VASP OUTCAR file.
-def __vasp_pv(dir, outcar="OUTCAR"):
+def _vasp_pv(dir, outcar="OUTCAR"):
     energies = []
     if not os.path.isfile(dir + "/" + outcar):
         return None
@@ -126,7 +126,7 @@ def __vasp_pv(dir, outcar="OUTCAR"):
         return None
 
 
-def __vasp_press(dir, outcar="OUTCAR"):
+def _vasp_press(dir, outcar="OUTCAR"):
     press = -1
     if not os.path.isfile(dir + "/" + outcar):
         return None
@@ -139,10 +139,10 @@ def __vasp_press(dir, outcar="OUTCAR"):
 
 # TODO
 # Obtains a dict of free energies from a thermal_properties.yaml file.
-def __free_energy(dir):
+def _free_energy(dir):
     pass
 
 
 if __name__ == "__main__":
-    print(__vasp_press("joboutput/Quartz/alpha-quartz/80", "OUTCAR"))
+    print(_vasp_press("joboutput/Quartz/alpha-quartz/80", "OUTCAR"))
     #print(vasp_chemformula("joboutput/Quartz/alpha-quartz/80", "OUTCAR", "POSCAR"))

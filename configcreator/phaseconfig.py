@@ -1,6 +1,7 @@
 from configcreator import extractdata
 import os
 import configparser
+import math
 
 
 # Creates a phase dictionary from a file written by the user
@@ -31,7 +32,7 @@ def create_config(phaselistfile, jobdir, confdir, outcar="OUTCAR", poscar="POSCA
 
     # Go through all the directories in the job output folder
     for (dirpath, dirnames, filenames) in os.walk(jobdir):
-        if extractdata.__vasp_enthalpy(dirpath, outcar) is not None or extractdata.__vasp_internalenergy(dirpath, poscar) is not None:
+        if extractdata._vasp_enthalpy(dirpath, outcar) is not None or extractdata._vasp_internalenergy(dirpath, poscar) is not None:
             # Check if the current folder matches any combination of the phase and the structure
             for phase in phasedirdict:
                 if phase in dirpath:
@@ -39,9 +40,9 @@ def create_config(phaselistfile, jobdir, confdir, outcar="OUTCAR", poscar="POSCA
                         if struct in dirpath:
                             print("Extracting from:")
                             print(dirpath)
-                            infodict[phase]["atoms"].append(extractdata.__vasp_atoms(dirpath, outcar))
-                            infodict[phase]["natoms"].append(extractdata.__vasp_natoms(dirpath, poscar))
-                            infodict[phase]["chemforms"].append(extractdata.__vasp_chemformula(dirpath, outcar, poscar))
+                            infodict[phase]["atoms"].append(extractdata._vasp_atoms(dirpath, outcar))
+                            infodict[phase]["natoms"].append(extractdata._vasp_natoms(dirpath, poscar))
+                            infodict[phase]["chemforms"].append(extractdata._vasp_chemformula(dirpath, outcar, poscar))
 
     # Do consistency checks; all atoms, natoms etc should be the same for all structures within a phase
     for phase in phasedirdict:
@@ -92,16 +93,82 @@ def read_config(confdir):
 
 
 # Creates mesh files for P, T data containing many types of energies.
-# Searches for any data for the compound 'name', and puts the output data file in 'outdir'.
-# 'namedepth' defines how many folders back will be used to name the structure, which by default is the folder the
-# OUTCAR, POSCAR etc is found in.
+# Uses a config file to search for the correct phase/structures; datafiles will be in the same directory as confdir.
 # TODO: make it scan pressure directories
-def create_datafile(name, outdir, filename, foldernameoffset=0):
-    with open(filename, "w") as f:
-        f.write("P\tT\tH\tPV\tG\tF")
+def create_datafiles(confdir, jobdir, outcar="OUTCAR", poscar="POSCAR"):
+    phasedict = read_config(confdir)
+
+    # Dictionary to temporarily hold data
+    energies = {}
+    for phase in phasedict:
+        energies[phase] = {}
+        for struct in phasedict[phase]["structures"]:
+            energies[phase][struct] = {}
+            energies[phase][struct]["P"] = []
+            energies[phase][struct]["T"] = []
+            energies[phase][struct]["E"] = []
+            energies[phase][struct]["H"] = []
+            energies[phase][struct]["PV"] = []
+            energies[phase][struct]["G"] = []
+            energies[phase][struct]["F"] = []
+
+    # Go through all the directories in the job output folder
+    for (dirpath, dirnames, filenames) in os.walk(jobdir):
+        if extractdata._vasp_enthalpy(dirpath, outcar) is not None or extractdata._vasp_internalenergy(dirpath, poscar) is not None:
+            # Check if the current folder matches any combination of the phase and the structure
+            # TODO: make it work for temperatures, and thus for G's and F's
+            for phase in phasedict:
+                if phase in dirpath:
+                    for struct in phasedict[phase]["structures"]:
+                        if struct in dirpath:
+                            print("Extracting from:")
+                            print(dirpath)
+                            press = extractdata._vasp_press(dirpath, outcar)
+                            enthalpy = extractdata._vasp_enthalpy(dirpath, outcar)
+                            intenergy = extractdata._vasp_internalenergy(dirpath, outcar)
+                            pvterm = extractdata._vasp_pv(dirpath, outcar)
+
+                            energies[phase][struct]["P"].append(press)
+                            energies[phase][struct]["T"].append(math.inf)
+                            energies[phase][struct]["E"].append(intenergy)
+                            energies[phase][struct]["H"].append(enthalpy)
+                            energies[phase][struct]["PV"].append(pvterm)
+                            energies[phase][struct]["G"].append(math.inf)
+                            energies[phase][struct]["F"].append(math.inf)
+
+    # Sort the values according to pressure values
+    """
+    for phase in phasedict:
+        for struct in phasedict[phase]["structures"]:
+            energies[phase][struct]["T"].sort(key=lambda x: energies[phase][struct]["P"].index(x[0]))
+            energies[phase][struct]["E"].sort(key=lambda x: energies[phase][struct]["P"].index(x[0]))
+            energies[phase][struct]["H"].sort(key=lambda x: energies[phase][struct]["P"].index(x[0]))
+            energies[phase][struct]["PV"].sort(key=lambda x: energies[phase][struct]["P"].index(x[0]))
+            energies[phase][struct]["G"].sort(key=lambda x: energies[phase][struct]["P"].index(x[0]))
+            energies[phase][struct]["F"].sort(key=lambda x: energies[phase][struct]["P"].index(x[0]))
+    """
+
+    # Finally, write energy values to file
+    for phase in phasedict:
+        os.makedirs(confdir + "/" + phase, exist_ok=True)
+        for struct in phasedict[phase]["structures"]:
+            with open(confdir + "/" + phase + "/" + struct + ".dat", "w") as f:
+                f.write("P\tT\tH\tE\tPV\tG\tF\n")
+                for idx, press in enumerate(energies[phase][struct]["P"]):
+                    line = "{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\n".format(
+                                                                 float(energies[phase][struct]["P"][idx]),
+                                                                 float(energies[phase][struct]["T"][idx]),
+                                                                 float(energies[phase][struct]["E"][idx]),
+                                                                 float(energies[phase][struct]["H"][idx]),
+                                                                 float(energies[phase][struct]["PV"][idx]),
+                                                                 float(energies[phase][struct]["G"][idx]),
+                                                                 float(energies[phase][struct]["F"][idx]))
+
+                    f.write(line)
 
 
 if __name__ == "__main__":
     # create_datafile("joboutput/Quartz/alpha-quartz/80", "./", "test.dat")
-    create_config("phaselist.conf", "joboutput", "configs")
-    read_config("configs")
+    # create_config("phaselist.conf", "joboutput", "configs")
+    # read_config("configs")
+    create_datafiles("configs", "joboutput")
