@@ -14,12 +14,22 @@ from matplotlib.tri import Triangulation
 # sort colorbar issues
 # docstrings and unit test...
 
+# consider:
+# self.ternary = ['Mgo', 'SiO2', 'Phase H']
+# same as for input generator, names must correspond
+# to phase names in original config file + match names of *.dat files
+#
+# How to identify phases in convex hull plot?
+# one way is too look at x,y and possibly z coordinates
+# and then get name from InputGenerator.tern_phases
+
 
 class ConvexHullData:
     def __init__(self, file_list):
         self.data, self.pressures, self.filenames = self.load_data(file_list)
         self.convex_hulls = self.get_all_convex_hulls(self.data)
         self.minz = self.min_z(self.data, self.convex_hulls)
+        
 
     # returns array containg xyz data and pressures
     def load_data(self, file_list):
@@ -28,10 +38,14 @@ class ConvexHullData:
         pressures = []
         for entry in file_list:
             try:
-                data.append(np.genfromtxt(entry, delimiter="", skip_header=2))
                 with open(entry, 'r') as f:
-                    press = f.readline().split()[3]
+                    press = f.readline().split()[2]
+                    # This is an idiot test to verify input files
+                    teststring = f.readline().split()[1]
+                    if teststring != 'Pressure:':
+                        raise IndexError
                     f.close()
+                data.append(np.genfromtxt(entry, delimiter="", skip_header=2))
                 pressures.append(press)
                 new_file_list.append(entry)
             except ValueError:
@@ -40,6 +54,9 @@ class ConvexHullData:
             except IOError:
                 print("Ommiting directory... " +
                       os.path.basename(entry))
+            except IndexError:
+                print('Something wrong with ' +
+                      os.path.basename(str(entry)))
         return data, self.kbar_to_gpa(pressures), new_file_list
 
     def kbar_to_gpa(self, pressures):
@@ -416,7 +433,8 @@ if __name__ == '__main__':
     #for point in MS.metastable[1]:
     #    print 'Point is: ', point, '\n'
     #    MS.find_decomposition(point)
-    print MS.metastable
     print('xxxxxxxx')
-    MS.find_all_decomposition()
+    print('MetaStable')
+    print(MS.metastable)
+    print(MS.find_all_decomposition())
     #print MS.point_distance_to_line(point, np.array([A, B]))
