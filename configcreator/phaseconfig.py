@@ -170,5 +170,5 @@ def create_datafiles(confdir, jobdir, outcar="OUTCAR", poscar="POSCAR"):
 if __name__ == "__main__":
     # create_datafile("joboutput/Quartz/alpha-quartz/80", "./", "test.dat")
     # create_config("phaselist.conf", "joboutput", "configs")
-    # read_config("configs")
-    create_datafiles("configs", "joboutput")
+    print(read_config("configs"))
+    # create_datafiles("configs", "joboutput")
