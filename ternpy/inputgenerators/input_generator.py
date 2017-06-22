@@ -4,11 +4,17 @@ import json
 from ternpy.utils.stoichbalancer import balance_interface
 from ternpy.configcreator import phaseconfig
 
-#from utils.stoichbalancer import balance_interface
+#from ...utils.stoichbalancer import balance_interface
+#from ...configcreator import phaseconfig
+
+#from .. import utils
+#from utils import stoichbalancer
+#from stoichbalancer import balance_interface
+
+#from .. import configcreator
 #from configcreator import phaseconfig
 
-
-ternary = ['MgO', 'Quartz', 'Ice']
+ternary = ['MgO', 'SiO2', 'Ice']
 
 
 class InputGenerator:
@@ -32,20 +38,20 @@ class InputGenerator:
         for ph, comp, xy in zip(self.tern_phases, self.compositions, coords):
             self.tern_phases[ph]['comp'] = comp
             self.tern_phases[ph]['coords'] = xy
-        # self.data = self.load_data()
-        # self.pressures = self.data.itervalues().next().itervalues().next()['P']
+        self.data = self.load_data()
+        self.pressures = self.data.itervalues().next().itervalues().next()['P']
         # save config file which contains only phases within ternary diagram
-        # self.save_config()
+        self.save_config()
         # print(self.tern_phases)
 
     # load energy data from files and returns dictionary
     def load_data(self):
         d = {}
-        direc = 'energies'
+        direc = 'energies/'
         for ph in self.tern_phases.keys():
             try:
                 d[ph] = {poly: np.genfromtxt(direc+poly+'.dat', names=True) for
-                         poly in self.tern_phases[ph]['Structures']['name']}
+                         poly in self.tern_phases[ph]['structures']}
             except IOError:
                 print('no file for', ph)
         return d
@@ -139,12 +145,12 @@ class InputGenerator:
     # returns array containing enthalpies
     # of formation for all phases
     def get_all_enthalpies(self, p):
-        #rows = sum(len(v['Structures']['name']) for v in
+        #rows = sum(len(v['structures']['name']) for v in
         #           self.tern_phases.itervalues())
         #arr = np.zeros((rows, 3))
         arr = []
         for phase in self.tern_phases:
-            for poly in self.tern_phases[phase]['Structures']['name']:
+            for poly in self.tern_phases[phase]['structures']:
                 x, y = self.tern_phases[phase]['coords']
                 z = self.enthalpy_of_formation(phase, poly, p)
                 arr.append([x, y, z])
@@ -173,5 +179,4 @@ if __name__ == '__main__':
     # data = np.genfromtxt(sys.argv[1], names=True)
     # config = np.genfromtxt(sys.argv[2], usecols=(1, 2, 3))
     # IG = InputGenerator(config, data)
-    # IG.generate_files()
-    pass
+    IG.generate_files()

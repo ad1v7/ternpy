@@ -41,10 +41,9 @@ class ConvexHullData:
                 with open(entry, 'r') as f:
                     press = f.readline().split()[2]
                     # This is an idiot test to verify input files
-                    teststring = f.readline().split()[1]
-                    if teststring != 'Pressure:':
-                        raise IndexError
-                    f.close()
+                    #teststring = f.readline().split()[1]
+                    #if teststring != 'Pressure:':
+                    #    raise IndexError
                 data.append(np.genfromtxt(entry, delimiter="", skip_header=2))
                 pressures.append(press)
                 new_file_list.append(entry)
@@ -54,9 +53,9 @@ class ConvexHullData:
             except IOError:
                 print("Ommiting directory... " +
                       os.path.basename(entry))
-            except IndexError:
-                print('Something wrong with ' +
-                      os.path.basename(str(entry)))
+            #except IndexError:
+            #    print('Something wrong with ' +
+            #          os.path.basename(str(entry)))
         return data, self.kbar_to_gpa(pressures), new_file_list
 
     def kbar_to_gpa(self, pressures):
@@ -146,8 +145,9 @@ class PlotConvexHull:
                       colors='k', triangles=simplices)
         # plot colour map
         cax = ax.tricontourf(x, y, z, cmap=plt.get_cmap('plasma'),
-                             triangles=simplices, levels=self.levels)
+                             triangles=simplices)
         # plot convex hull vertices.
+
         ax.scatter(data[hull_data.vertices, 0],
                    data[hull_data.vertices, 1],
                    marker='o', c='k', s=30, zorder=10)
@@ -159,7 +159,7 @@ class PlotConvexHull:
         ax.text(0.5, math.sqrt(3)/2+0.02, self.labels[2],
                 fontsize=self.fontsize, ha='center', va='bottom')
         # add colorbar
-        self.colorbar(cax)
+        #self.colorbar(cax)
         # add presure label
         if self.showpressure:
             ax.text(0.85, 0.8, 'P='+pressure+' GPa',
@@ -408,11 +408,11 @@ if __name__ == '__main__':
     hull = ConvexHullData(sys.argv[1:])
     hull_plotter = PlotConvexHull(hull, steps=12)
     hull_plotter.plot_all(hull)
-    MS = FindMetastable(hull)
-    point = np.array([1, .5, 1])
-    A = np.array([0.33, 0.33, 0.33])
-    B = np.array([1., 1., 1.])
-    C = np.array([0.5, 1, 0])
+    #MS = FindMetastable(hull)
+    #point = np.array([1, .5, 1])
+    #A = np.array([0.33, 0.33, 0.33])
+    #B = np.array([1., 1., 1.])
+    #C = np.array([0.5, 1, 0])
 
     #point = MS.metastable[0][0]
     #point = MS.vertices[0][2]
@@ -429,7 +429,7 @@ if __name__ == '__main__':
     #for point in MS.metastable[1]:
     #    print 'Point is: ', point, '\n'
     #    MS.find_decomposition(point)
-    print('xxxxxxxx')
-    print('MetaStable')
-    print(MS.metastable)
-    print(MS.find_all_decomposition())
+    #print('xxxxxxxx')
+    #print('MetaStable')
+    #print(MS.metastable)
+    #print(MS.find_all_decomposition())

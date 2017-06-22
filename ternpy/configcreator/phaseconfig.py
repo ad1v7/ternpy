@@ -5,7 +5,7 @@ except ImportError:
 import math
 import os
 
-from ternpy.configcreator import extractdata
+#from ternpy.configcreator import extractdata
 #import extractdata
 
 # Creates a phase dictionary from a file written by the user
