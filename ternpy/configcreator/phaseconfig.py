@@ -5,8 +5,8 @@ except ImportError:
 import math
 import os
 
-#from ternpy.configcreator import extractdata
-import extractdata
+from ternpy.configcreator import extractdata
+#import extractdata
 
 # Creates a phase dictionary from a file written by the user
 def __get_phasedirdict(phaselist):
@@ -134,25 +134,28 @@ def create_datafiles(confdir, jobdir, outcar="OUTCAR", poscar="POSCAR"):
                             intenergy = extractdata._vasp_internalenergy(dirpath, outcar)
                             pvterm = extractdata._vasp_pv(dirpath, outcar)
 
-                            energies[phase][struct]["P"].append(press)
+                            energies[phase][struct]["P"].append(float(press))
                             energies[phase][struct]["T"].append(float('inf'))
-                            energies[phase][struct]["E"].append(intenergy)
-                            energies[phase][struct]["H"].append(enthalpy)
-                            energies[phase][struct]["PV"].append(pvterm)
+                            energies[phase][struct]["E"].append(float(intenergy))
+                            energies[phase][struct]["H"].append(float(enthalpy))
+                            energies[phase][struct]["PV"].append(float(pvterm))
                             energies[phase][struct]["G"].append(float('inf'))
                             energies[phase][struct]["F"].append(float('inf'))
 
+    def sortedindices(list):
+        return sorted(range(len(list)), key=lambda x: list[x])
+
     # Sort the values according to pressure values
-    """
     for phase in phasedict:
         for struct in phasedict[phase]["structures"]:
-            energies[phase][struct]["T"].sort(key=lambda x: energies[phase][struct]["P"].index(x[0]))
-            energies[phase][struct]["E"].sort(key=lambda x: energies[phase][struct]["P"].index(x[0]))
-            energies[phase][struct]["H"].sort(key=lambda x: energies[phase][struct]["P"].index(x[0]))
-            energies[phase][struct]["PV"].sort(key=lambda x: energies[phase][struct]["P"].index(x[0]))
-            energies[phase][struct]["G"].sort(key=lambda x: energies[phase][struct]["P"].index(x[0]))
-            energies[phase][struct]["F"].sort(key=lambda x: energies[phase][struct]["P"].index(x[0]))
-    """
+            sortedidx = sortedindices(energies[phase][struct]["P"])
+            energies[phase][struct]["P"] = [energies[phase][struct]["P"][i] for i in sortedidx]
+            energies[phase][struct]["T"] = [energies[phase][struct]["T"][i] for i in sortedidx]
+            energies[phase][struct]["E"] = [energies[phase][struct]["E"][i] for i in sortedidx]
+            energies[phase][struct]["H"] = [energies[phase][struct]["H"][i] for i in sortedidx]
+            energies[phase][struct]["PV"] = [energies[phase][struct]["PV"][i] for i in sortedidx]
+            energies[phase][struct]["G"] = [energies[phase][struct]["G"][i] for i in sortedidx]
+            energies[phase][struct]["F"] = [energies[phase][struct]["F"][i] for i in sortedidx]
 
     # Finally, write energy values to file
     for phase in phasedict:
