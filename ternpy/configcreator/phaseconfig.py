@@ -5,8 +5,8 @@ except ImportError:
 import math
 import os
 
-from ternpy.configcreator import extractdata
-
+#from ternpy.configcreator import extractdata
+import extractdata
 
 # Creates a phase dictionary from a file written by the user
 def __get_phasedirdict(phaselist):
@@ -59,6 +59,8 @@ def create_config(phaselistfile, jobdir, confdir, outcar="OUTCAR", poscar="POSCA
 
     # Finally, write to the configuration file
     cfgfile = confdir + "/phases.conf"
+    if not os.path.exists(confdir):
+        os.makedirs(confdir)
     open(confdir + "/phases.conf", 'w').close()     # Delete file contents
     with open(cfgfile, "a") as f:
         for phase in phasedirdict:
@@ -133,12 +135,12 @@ def create_datafiles(confdir, jobdir, outcar="OUTCAR", poscar="POSCAR"):
                             pvterm = extractdata._vasp_pv(dirpath, outcar)
 
                             energies[phase][struct]["P"].append(press)
-                            energies[phase][struct]["T"].append(math.inf)
+                            energies[phase][struct]["T"].append(float('inf'))
                             energies[phase][struct]["E"].append(intenergy)
                             energies[phase][struct]["H"].append(enthalpy)
                             energies[phase][struct]["PV"].append(pvterm)
-                            energies[phase][struct]["G"].append(math.inf)
-                            energies[phase][struct]["F"].append(math.inf)
+                            energies[phase][struct]["G"].append(float('inf'))
+                            energies[phase][struct]["F"].append(float('inf'))
 
     # Sort the values according to pressure values
     """
@@ -154,10 +156,10 @@ def create_datafiles(confdir, jobdir, outcar="OUTCAR", poscar="POSCAR"):
 
     # Finally, write energy values to file
     for phase in phasedict:
-        if not os.path.exists(confdir + "/energies"):
-            os.makedirs(confdir + "/energies")
+        if not os.path.exists("energies"):
+            os.makedirs("energies")
         for struct in phasedict[phase]["structures"]:
-            with open(confdir + "/energies/" + struct + ".dat", "w") as f:
+            with open("energies/" + struct + ".dat", "w") as f:
                 f.write("P\tT\tH\tE\tPV\tG\tF\n")
                 for idx, press in enumerate(energies[phase][struct]["P"]):
                     line = "{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\n".format(
