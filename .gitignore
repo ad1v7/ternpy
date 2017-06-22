@@ -9,4 +9,5 @@
 
 *.swp
 
-*.elFilo
+# Testing directory with test data
+TESTING/*
