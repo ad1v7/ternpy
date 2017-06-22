@@ -1,7 +1,7 @@
 import numpy as np
 from collections import OrderedDict
 import json
-from ternpy.utils.stoichbalancer import balance_interface
+from ternpy.utils.stoichbalancer import balance
 from ternpy.configcreator import phaseconfig
 
 #from ...utils.stoichbalancer import balance_interface
@@ -94,7 +94,7 @@ class InputGenerator:
             temp = ternary[:]
             temp.append(phase)
             data = self.get_phase_data(temp)
-            test, arr = balance_interface(data, 3)
+            test, arr = balance(data, 3)
             return test, arr[:3]
 
     # returns 'full' phase record given list of phase names

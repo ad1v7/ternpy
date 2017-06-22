@@ -1,6 +1,5 @@
 '''
-Module contains class to represent phase
-And a bunch of usefull functions
+A bunch of usefull functions
 such as
 -------------------------------------
 balance stoichimetry
@@ -87,7 +86,7 @@ def find_int(arr):
 # [2, 1, 2]
 # which gives
 # 2*H2 + 1*O2 <-> 2*H2O
-def balance(mtx):
+def balance_engine(mtx):
     rows, cols = mtx.shape
     if rows == cols:
         # compute reduced row echelon form
@@ -127,20 +126,18 @@ def balance(mtx):
     solution = [int(round(factor*item)) for item in solution]
     #
     # currently return solution which contains negative numbers
-    # use balance_interface() instead
+    # use balance() instead
     #
     #
     return solution
 
 
 # prepare matrix input for balance stoichiometry function
-# input should be a list of Phase objects
 # BUT for now it will take two lists
 # one with sublist containing atom names found in a given phase
 # second with sublist containg number of atoms for a given phase
 # the ordering of items in lists and sublists must correspond to each other
 # but this is guaranteed given data is extracted from CONTCAR file
-
 def get_balance_matrix(phases_atoms, phases_natoms):
     atomslist = []
     for atoms in phases_atoms:
@@ -158,9 +155,9 @@ def get_balance_matrix(phases_atoms, phases_natoms):
     return np.matrix(mtx)
 
 
-# interface to balance()
+# interface to balance_engine()
 # takes dictionary of phases
-def balance_interface(dictdata, *args):
+def balance(dictdata, *args):
     lhs = 0
     for arg in args:
         lhs = arg
@@ -170,7 +167,7 @@ def balance_interface(dictdata, *args):
     phases_atoms = [dictdata[phase]['atoms'] for phase in dictdata]
     phases_natoms = [dictdata[phase]['natoms'] for phase in dictdata]
     mtx = get_balance_matrix(phases_atoms, phases_natoms)
-    solution = balance(mtx)
+    solution = balance_engine(mtx)
     # test if lhs and rhs of the equation have same signs
     # if not then the equation can not be balanced
     # THIS MAY NOT ALWAYS WORK: AD HOC SOLUTION

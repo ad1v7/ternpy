@@ -29,7 +29,6 @@ class ConvexHullData:
         self.data, self.pressures, self.filenames = self.load_data(file_list)
         self.convex_hulls = self.get_all_convex_hulls(self.data)
         self.minz = self.min_z(self.data, self.convex_hulls)
-        
 
     # returns array containg xyz data and pressures
     def load_data(self, file_list):
@@ -39,11 +38,8 @@ class ConvexHullData:
         for entry in file_list:
             try:
                 with open(entry, 'r') as f:
-                    press = f.readline().split()[2]
-                    # This is an idiot test to verify input files
-                    #teststring = f.readline().split()[1]
-                    #if teststring != 'Pressure:':
-                    #    raise IndexError
+                    line = f.readline().split()
+                    press = line[2]
                 data.append(np.genfromtxt(entry, delimiter="", skip_header=2))
                 pressures.append(press)
                 new_file_list.append(entry)
@@ -53,9 +49,9 @@ class ConvexHullData:
             except IOError:
                 print("Ommiting directory... " +
                       os.path.basename(entry))
-            #except IndexError:
-            #    print('Something wrong with ' +
-            #          os.path.basename(str(entry)))
+            except IndexError:
+                print('Something wrong with ' +
+                      os.path.basename(str(entry)))
         return data, self.kbar_to_gpa(pressures), new_file_list
 
     def kbar_to_gpa(self, pressures):
@@ -96,7 +92,7 @@ class PlotConvexHull:
         # when convex hull z value is close to 0
         self.levels = np.append(np.arange(self.CHD.minz, -0, 5e-4),
                                 [-1e-8, -1e-9, -0])
-        self.labels = self.get_nice_chem_formulas(['MgO', 'SiO2', 'H2O'])
+        self.labels = self.get_latex_chem_formulas(['MgO', 'SiO2', 'H2O'])
 
     def savefigure(self, filename):
         savefile = os.path.basename(filename)
@@ -114,7 +110,7 @@ class PlotConvexHull:
             cb.ax.tick_params(labelsize=14)
             cb.ax.invert_xaxis()
 
-    def get_nice_chem_formulas(self, labels):
+    def get_latex_chem_formulas(self, labels):
         labels = [re.sub("([0-9])", "_\\1", k) for k in labels]
         return ['$\mathregular{'+k+'}$' for k in labels]
 
@@ -145,7 +141,7 @@ class PlotConvexHull:
                       colors='k', triangles=simplices)
         # plot colour map
         cax = ax.tricontourf(x, y, z, cmap=plt.get_cmap('plasma'),
-                             triangles=simplices)
+                             triangles=simplices, levels=self.levels)
         # plot convex hull vertices.
 
         ax.scatter(data[hull_data.vertices, 0],
@@ -198,7 +194,7 @@ class FindMetastable:
             points.append(hull.points)
         return points
 
-    # returns array of all metastable points 
+    # returns array of all metastable points
     def get_all_metastable(self):
         metastable = []
         for i, vertices in enumerate(self.vertices):

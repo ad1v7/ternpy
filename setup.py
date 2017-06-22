@@ -6,7 +6,7 @@ def readme():
         return f.read()
 
 setup(name='ternpy',
-      version='0.1.2',
+      version='0.2.0',
       long_description=readme(),
       description='Ternary Plot Tool',
       url='http://github.com/ad1v7/ternpy',
@@ -18,6 +18,7 @@ setup(name='ternpy',
           'numpy',
           'scipy',
           'matplotlib',
+          'sympy',
       ],
       test_suite='nose.collector',
       tests_require=['nose'],
