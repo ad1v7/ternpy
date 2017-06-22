@@ -18,48 +18,12 @@ but it seems that algebraic method as employed in sympy is the way to go.
 From scipy can use LU factorization but it is prone to errors
 '''
 from random import randint
-from somefunctions import gen_simple_chem_formula
 import numpy as np
 from sympy import Matrix
 import numpy.linalg as l
 from fractions import Fraction
 import functools
-import math
 from collections import OrderedDict
-
-# name can come from directory name
-# formula from CONTCAR
-# atoms from CONTCAR
-# x, y coords can be generated given numbers of constituents
-# but how to deal with case when we want to use phase in
-# multiple number of ternary diagrams
-# it is probably better not to include xy coords in this class
-# convenient class to represent phase
-class Phase:
-    def __init__(self, **kwargs):
-        r = str(randint(0, 99))
-        self.name = kwargs.get('name', 'phasename'+r)
-        self.atoms = kwargs.get('atoms', 'atom types'+r)
-        self.natoms = kwargs.get('natoms', [1, 2, 3])
-        self.formula = kwargs.get('formula', 'formula'+r)
-        self.niceformula = kwargs.get('niceformula', 'niceformula'+r)
-        if 'infile' in kwargs:
-            self.get_phase_data(kwargs['infile'])
-
-    # suppose to load data from the config file
-    # config file is generated during data extraction process
-    # from VASP run. Config file can be modified by the user
-    # for example to provide nice chemical formula
-    def get_phase_data(self, infile):
-        name, atoms, natoms, formula, niceformula = self.load_config(infile)
-        self.name = name
-        self.atoms = atoms
-        self.natoms = natoms
-        self.formula = gen_simple_chem_formula(atoms, natoms)
-        self.niceformula = niceformula
-
-    def load_config(self, infile):
-        return 'Brucite', ['Mg', 'O', 'H'], [1, 2, 2], 'MgO2H2', 'Mg(OH)2'
 
 
 # given two lists of atom symbols
@@ -252,7 +216,6 @@ def gcd_list(l):
     return res
 
 if __name__ == '__main__':
-    Brucite = Phase(name='Brucite',  infile='somefilename')
     products = [['Mg', 'O'], ['H', 'O'], ['Si', 'F']]
     reactants = [['Mg', 'O', 'H'], ['K', 'L']]
     phaseA = ['Mg', 'Si', 'O', 'H']

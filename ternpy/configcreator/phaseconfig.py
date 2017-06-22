@@ -1,4 +1,7 @@
-import configparser
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 import math
 import os
 
@@ -83,8 +86,8 @@ def read_config(confdir):
             phasedict[phase] = {}
             phasedict[phase]["name"] = cfg.get(phase, "name")
             phasedict[phase]["plotname"] = cfg.get(phase, "plotname")
-            phasedict[phase]["atoms"] = cfg.get(phase, "atoms")
-            phasedict[phase]["natoms"] = cfg.get(phase, "natoms")
+            phasedict[phase]["atoms"] = cfg.get(phase, "atoms").split(' ')
+            phasedict[phase]["natoms"] = [int(x) for x in cfg.get(phase, "natoms").split(' ')]
             phasedict[phase]["chemform"] = cfg.get(phase, "chemform")
             phasedict[phase]["plotchemform"] = cfg.get(phase, "plotchemform")
             phasedict[phase]["structures"] = cfg.get(phase, "structures").split(", ")
@@ -151,9 +154,10 @@ def create_datafiles(confdir, jobdir, outcar="OUTCAR", poscar="POSCAR"):
 
     # Finally, write energy values to file
     for phase in phasedict:
-        os.makedirs(confdir + "/" + phase, exist_ok=True)
+        if not os.path.exists(confdir + "/energies"):
+            os.makedirs(confdir + "/energies")
         for struct in phasedict[phase]["structures"]:
-            with open(confdir + "/" + phase + "/" + struct + ".dat", "w") as f:
+            with open(confdir + "/energies/" + struct + ".dat", "w") as f:
                 f.write("P\tT\tH\tE\tPV\tG\tF\n")
                 for idx, press in enumerate(energies[phase][struct]["P"]):
                     line = "{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\n".format(
@@ -171,5 +175,5 @@ def create_datafiles(confdir, jobdir, outcar="OUTCAR", poscar="POSCAR"):
 if __name__ == "__main__":
     # create_datafile("joboutput/Quartz/alpha-quartz/80", "./", "test.dat")
     # create_config("phaselist.conf", "joboutput", "configs")
-    print(read_config("configs"))
-    # create_datafiles("configs", "joboutput")
+    # print(read_config("configs"))
+    create_datafiles("configs", "joboutput")

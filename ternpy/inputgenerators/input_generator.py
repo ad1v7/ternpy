@@ -1,25 +1,11 @@
 import numpy as np
-from Plots.phase import balance_interface
 from collections import OrderedDict
 import json
-#import sys
+from ternpy.utils.stoichbalancer import balance_interface
+from ternpy.configcreator import phaseconfig
 
-allphases = {'Brucite': {'atoms': ['Mg', 'O', 'H'], 'natoms': [1, 2, 2],
-                         'Structures': {'name': ['P4', 'P3']}},
-             'Enstatite': {'atoms': ['Mg', 'Si', 'O'], 'natoms': [1, 1, 3],
-                           'Structures': {'name': ['Bridgmanite',
-                                                   'clino',
-                                                   'ilmenite']}},
-             'PhaseB': {'atoms': ['Mg', 'Si', 'O', 'H'], 'natoms': [12, 4, 21, 2],
-                        'Structures': {'name': ['PhaseB']}},
-             'SiO2': {'atoms': ['Si', 'O'], 'natoms': [1, 2], 'Structures':
-                      {'name': ['alpha',  'stishovite']}},
-             'MgO': {'atoms': ['Mg', 'O'], 'natoms': [1, 1], 'Structures':
-                     {'name': ['MgO']}},
-             'H2O': {'atoms': ['O', 'H'], 'natoms': [1, 2], 'Structures':
-                     {'name': ['Ice1h', 'Ice8']}}}
 
-ternary = ['MgO', 'SiO2', 'H2O']
+ternary = ['MgO', 'Quartz', 'Ice']
 
 
 class InputGenerator:
@@ -31,8 +17,9 @@ class InputGenerator:
     # ['a', 'b', 'c'] corresponds to:
     #                c
     #               a b
-    def __init__(self, allphases, ternary):
-        self.allphases = allphases
+    def __init__(self, ternary):
+        # self.allphases = allphases
+        self.allphases = phaseconfig.read_config("configs")
         self.ternary = ternary
         self.tern_phases, self.compositions = self.get_phases(ternary)
         coords = self.get_coords()
@@ -42,10 +29,11 @@ class InputGenerator:
         for ph, comp, xy in zip(self.tern_phases, self.compositions, coords):
             self.tern_phases[ph]['comp'] = comp
             self.tern_phases[ph]['coords'] = xy
-        self.data = self.load_data()
-        self.pressures = self.data.itervalues().next().itervalues().next()['P']
+        # self.data = self.load_data()
+        # self.pressures = self.data.itervalues().next().itervalues().next()['P']
         # save config file which contains only phases within ternary diagram
-        self.save_config()
+        # self.save_config()
+        print(self.tern_phases)
 
     # load energy data from files and returns dictionary
     def load_data(self):
@@ -178,8 +166,9 @@ class InputGenerator:
                     np.savetxt(f, arr, fmt=['%.15f', '%.15f', '%.15f'])
 
 if __name__ == '__main__':
-    IG = InputGenerator(allphases, ternary)
-#data = np.genfromtxt(sys.argv[1], names=True)
-#config = np.genfromtxt(sys.argv[2], usecols=(1, 2, 3))
-#IG = InputGenerator(config, data)
-    IG.generate_files()
+    IG = InputGenerator(ternary)
+    # data = np.genfromtxt(sys.argv[1], names=True)
+    # config = np.genfromtxt(sys.argv[2], usecols=(1, 2, 3))
+    # IG = InputGenerator(config, data)
+    # IG.generate_files()
+    pass
