@@ -1,0 +1,107 @@
+{
+  "Enstatite": {
+    "natoms": [
+      1, 
+      1, 
+      3
+    ], 
+    "Structures": {
+      "plotname": [
+        "Bridgmanite", 
+        "Clinoenstatite", 
+        "HP-clino", 
+        "ilmenite", 
+        "ortho"
+      ]
+    }, 
+    "atoms": [
+      "Mg", 
+      "Si", 
+      "O"
+    ]
+  }, 
+  "Brucite": {
+    "natoms": [
+      1, 
+      2, 
+      2
+    ], 
+    "Structures": {
+      "plotname": [
+        "P4", 
+        "P3"
+      ]
+    }, 
+    "atoms": [
+      "Mg", 
+      "O", 
+      "H"
+    ]
+  }, 
+  "SiO2": {
+    "natoms": [
+      1, 
+      2
+    ], 
+    "Structures": {
+      "plotname": [
+        "alpha", 
+        "coe", 
+        "stishovite"
+      ]
+    }, 
+    "atoms": [
+      "Si", 
+      "O"
+    ]
+  }, 
+  "MgO": {
+    "natoms": [
+      1, 
+      1
+    ], 
+    "Structures": {
+      "plotname": [
+        "MgO"
+      ]
+    }, 
+    "atoms": [
+      "Mg", 
+      "O"
+    ]
+  }, 
+  "H2O": {
+    "natoms": [
+      1, 
+      2
+    ], 
+    "Structures": {
+      "plotname": [
+        "H2O"
+      ]
+    }, 
+    "atoms": [
+      "O", 
+      "H"
+    ]
+  }, 
+  "PhaseB": {
+    "natoms": [
+      12, 
+      4, 
+      21, 
+      2
+    ], 
+    "Structures": {
+      "plotname": [
+        "Phase B_struct"
+      ]
+    }, 
+    "atoms": [
+      "Mg", 
+      "Si", 
+      "O", 
+      "H"
+    ]
+  }
+}
