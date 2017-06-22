@@ -55,7 +55,7 @@ class InputGenerator:
                 d[ph] = {poly: np.genfromtxt(poly+'.dat', names=True) for
                          poly in self.tern_phases[ph]['Structures']['name']}
             except IOError:
-                print 'no file for', ph
+                print('no file for', ph)
         return d
 
     def save_config(self):
@@ -178,10 +178,8 @@ class InputGenerator:
                     np.savetxt(f, arr, fmt=['%.15f', '%.15f', '%.15f'])
 
 if __name__ == '__main__':
-    print 'Test'
     IG = InputGenerator(allphases, ternary)
 #data = np.genfromtxt(sys.argv[1], names=True)
 #config = np.genfromtxt(sys.argv[2], usecols=(1, 2, 3))
 #IG = InputGenerator(config, data)
-#print(hasattr(IG, 'dataa'))
     IG.generate_files()

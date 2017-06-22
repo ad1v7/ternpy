@@ -98,9 +98,9 @@ def find_int(arr):
                 test = False
                 break
         if test:
-            print i
+            print(i)
             return [int(i*item) for item in arr]
-    print "Could not find one"
+    print("Could not find one")
     return arr
 
 
@@ -156,15 +156,11 @@ def balance(mtx):
     solution = (flatten(mtx[..., cols-1].tolist()))
     # divide each element by abs of min value in the column
     #solution = [abs(item) for item in solution]
-    #print 'This is a non integer solution:'
-    #print solution
     # convert floats to fractions and list all denominators
     denoms = [Fraction(x).limit_denominator().denominator for x in solution]
     # find the least common multiple from the denoms list
     factor = functools.reduce(lambda a, b: a*b//gcd(a, b), denoms)
-    #print 'This is an integer solution:'
     solution = [int(round(factor*item)) for item in solution]
-    #print solution
     #
     # currently return solution which contains negative numbers
     # use balance_interface() instead
@@ -195,7 +191,6 @@ def get_balance_matrix(phases_atoms, phases_natoms):
             else:
                 row.append(0)
         mtx.append(row)
-    #print 'your matrix\n', np.matrix(mtx), '\nend'
     return np.matrix(mtx)
 
 
@@ -206,7 +201,7 @@ def balance_interface(dictdata, *args):
     for arg in args:
         lhs = arg
     if type(dictdata) != type(OrderedDict()):
-        print type(dictdata)
+        print(type(dictdata))
         print('Unordered dictionary supplied. Result might be wrong!')
     phases_atoms = [dictdata[phase]['atoms'] for phase in dictdata]
     phases_natoms = [dictdata[phase]['natoms'] for phase in dictdata]
@@ -217,10 +212,8 @@ def balance_interface(dictdata, *args):
     # THIS MAY NOT ALWAYS WORK: AD HOC SOLUTION
     if ((abs(sum(solution[:lhs])) == sum([abs(i) for i in solution[:lhs]])) and
         (abs(sum(solution[lhs:])) == sum([abs(i) for i in solution[lhs:]]))):
-        #print 'Good'
         return True, [abs(i) for i in solution]
     else:
-        #print 'Bad'
         return False, []
 
 
@@ -275,18 +268,12 @@ if __name__ == '__main__':
     #phases = [['Mg', 'O', 'H'], ['Mg', 'O'], ['H', 'O']]
     #phases_atoms = [[1, 2, 2], [1, 1], [2, 1]]
     #phases = [['Mg', 'O', 'H', 'Si'], ['Mg', 'O'], ['H', 'O'], ['Si', 'O']]
-    print '###############'
     mtx = get_balance_matrix(phases, phases_atoms)
-    print mtx
     #balance(mtx)
-    print '###############'
 
-    print '------------------------'
     #a= np.array([[1, 0, -1], [1, 1, -2], [0, 2, -2]])
     #b = np.array([0, 0, 0])
     matrix = np.matrix([[1, 1, 0], [2, 1, 1], [2, 0, 2]])
-    print matrix
-    print l.matrix_rank(matrix)
     mat = np.matrix([[1, 1, 0, 0, 0, 1],
                     [1, 0, 0, 2, 0, 0],
                     [0, 3, 0, 0, 1, 0],
@@ -306,4 +293,4 @@ if __name__ == '__main__':
     #matrix = np.matrix([[1,0,1],[0,2,3]])
     matrix = np.matrix([[2, 0, 2], [0, 2, 1]])
     #matrix = np.matrix([[7, 0, 1, 0], [6, 0, 0, 2], [2, 2, 2, 1]])
-    print balance(matrix)
+    print(balance(matrix))

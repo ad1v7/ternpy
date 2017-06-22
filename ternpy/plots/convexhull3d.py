@@ -363,16 +363,16 @@ class FindMetastable:
             tribool, triangle = self.is_point_inside_triangle(point, tri)
             linebool, line = self.is_point_on_tri_edge(point, tri)
             if tribool:
-                print 'Triangle:'
-                print triangle
-                print 'Distance:'
-                print self.point_distance_to_plane(point, triangle[1:])
+                print('Triangle:')
+                print(triangle)
+                print('Distance:')
+                print(self.point_distance_to_plane(point, triangle[1:]))
                 print('--------------')
             elif linebool:
-                print 'Line:'
-                print line
-                print 'Distance:'
-                print self.point_distance_to_line(point, line[1:])
+                print('Line:')
+                print(line)
+                print('Distance:')
+                print(self.point_distance_to_line(point, line[1:]))
                 print('--------------')
                 # this is because line can be shared by more than one triangle
                 break
@@ -419,10 +419,6 @@ if __name__ == '__main__':
     #A = MS.triangles[0][0][0]
     #B = MS.triangles[0][0][1]
     #C = MS.triangles[0][0][2]
-    #print point
-    #print A
-    #print B
-    #print C
 
     #tri = MS.triangles[0][0]
     #print(MS.is_point_on_tri_edge(point, tri))
@@ -437,4 +433,3 @@ if __name__ == '__main__':
     print('MetaStable')
     print(MS.metastable)
     print(MS.find_all_decomposition())
-    #print MS.point_distance_to_line(point, np.array([A, B]))
