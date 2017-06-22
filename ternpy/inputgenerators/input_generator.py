@@ -4,6 +4,9 @@ import json
 from ternpy.utils.stoichbalancer import balance_interface
 from ternpy.configcreator import phaseconfig
 
+#from utils.stoichbalancer import balance_interface
+#from configcreator import phaseconfig
+
 
 ternary = ['MgO', 'Quartz', 'Ice']
 
@@ -33,14 +36,15 @@ class InputGenerator:
         # self.pressures = self.data.itervalues().next().itervalues().next()['P']
         # save config file which contains only phases within ternary diagram
         # self.save_config()
-        print(self.tern_phases)
+        # print(self.tern_phases)
 
     # load energy data from files and returns dictionary
     def load_data(self):
         d = {}
+        direc = 'energies'
         for ph in self.tern_phases.keys():
             try:
-                d[ph] = {poly: np.genfromtxt(poly+'.dat', names=True) for
+                d[ph] = {poly: np.genfromtxt(direc+poly+'.dat', names=True) for
                          poly in self.tern_phases[ph]['Structures']['name']}
             except IOError:
                 print('no file for', ph)
@@ -52,7 +56,6 @@ class InputGenerator:
                  self.ternary[2] + '.json')
         with open(fname, "w") as f:
             json.dump(self.tern_phases, f, indent=3)
-
 
     # returns all phases within ternary diagram
     # AND phases decomposition wrt to ternary corners
