@@ -12,3 +12,12 @@ To use, simply do::
 
     >>> import ternpy
     >>> ternpy.joke()
+
+Or from terminal::
+
+    ternpy
+
+Text..
+
+.. note::
+    This is a note...
