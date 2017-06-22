@@ -13,7 +13,7 @@ setup(name='ternpy',
       author=['Marcin Kirsz', 'Sebastiaan van de Bund'],
       author_email=['marcin.kirsz@gmail.com', 'sebvdb@me.com'],
       license='MIT',
-      packages=['ternpy'],
+      packages=find_packages(),
       install_requires=[
           'numpy',
           'scipy',
