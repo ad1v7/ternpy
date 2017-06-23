@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def readme():
@@ -24,7 +24,6 @@ setup(name='ternpy',
       tests_require=['nose'],
       include_package_data=True,
       entry_points={
-          'console_scripts': ['ternpy=ternpy.command_line:main',
-                              'ternpy2=ternpy.command_line:gen_input_files'],
+          'console_scripts': ['ternpy=ternpy.cli:main'],
       },
       zip_safe=False)
