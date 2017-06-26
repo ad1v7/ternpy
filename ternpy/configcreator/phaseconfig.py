@@ -83,11 +83,11 @@ def create_config(phaselistfile, jobdir, confdir, outcar="OUTCAR", poscar="POSCA
 
 
 # Reads a config file and returns a dictionary with all the information
-def read_config(confdir):
+def read_config(configfile):
     phasedict = {}
 
     cfg = configparser.ConfigParser()
-    cfg.read(confdir + "/phases.conf")
+    cfg.read(configfile)
     for phase in dict(cfg.items()):
         if phase != "DEFAULT":
             phasedict[phase] = {}
@@ -118,8 +118,8 @@ def read_projectdir(configfile):
 # Creates mesh files for P, T data containing many types of energies.
 # Uses a config file to search for the correct phase/structures; datafiles will be in the same directory as confdir.
 # TODO: make it scan pressure directories
-def create_datafiles(confdir, jobdir, outcar="OUTCAR", poscar="POSCAR"):
-    phasedict = read_config(confdir)
+def create_datafiles(configfile, jobdir, outcar="OUTCAR", poscar="POSCAR"):
+    phasedict = read_config(configfile)
 
     # Dictionary to temporarily hold data
     energies = {}
