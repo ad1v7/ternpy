@@ -8,6 +8,7 @@ import os
 from ternpy.configcreator import extractdata
 #import extractdata
 
+
 # Creates a phase dictionary from a file written by the user
 def __get_phasedirdict(phaselist):
     phasedict = {}
@@ -63,6 +64,10 @@ def create_config(phaselistfile, jobdir, confdir, outcar="OUTCAR", poscar="POSCA
         os.makedirs(confdir)
     open(confdir + "/phases.conf", 'w').close()     # Delete file contents
     with open(cfgfile, "a") as f:
+        # Write the path of the job output directory for future reference
+        f.write("\tdftdir=" + jobdir + "\n")
+        f.write("\tprojectdir=" + confdir + "\n")
+        f.write("\n")
         for phase in phasedirdict:
             f.write("[" + phase + "]\n")
             f.write("\tname=" + phase + "\n")
@@ -96,6 +101,18 @@ def read_config(confdir):
             phasedict[phase]["structureplotnames"] = cfg.get(phase, "structureplotnames").split(", ")
 
     return phasedict
+
+
+def read_dftdir(confdir):
+    cfg = configparser.ConfigParser()
+    cfg.read(confdir + "/phases.conf")
+    return cfg.get("DEFAULT", "dftdir")
+
+
+def read_projectdir(confdir):
+    cfg = configparser.ConfigParser()
+    cfg.read(confdir + "/phases.conf")
+    return cfg.get("DEFAULT", "projectdir")
 
 
 # Creates mesh files for P, T data containing many types of energies.

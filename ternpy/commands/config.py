@@ -14,6 +14,6 @@ class Config(Base):
         else:
             phaselist = 'phaselist.conf'
 
-        print phaselist
+        print('phaselist')
         #phaseconfig.create_config(phaselist, "joboutput", "configs")
         pass
