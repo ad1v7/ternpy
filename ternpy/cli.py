@@ -3,7 +3,9 @@ ternpy
 
 Usage:
   ternpy hi
-  ternpy config [-l PHASELIST]
+  ternpy config [((-p | --phaselist) FILE)] [((-j | --dftdir) PATH)]
+            [((-d | --projectdir) PROJECTDIR)]
+  ternpy extract
   ternpy -h | --help
   ternpy --version
 
@@ -12,7 +14,7 @@ Options:
   --version                         Show version.
 
 Examples:
-  ternpy hi
+  ternpy config -p PhaseListFile -j ~/MyData -d ~/MyProject
 
 Help:
   For help using this tool, please open an issue on the Github repository:
