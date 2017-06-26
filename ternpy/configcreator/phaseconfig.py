@@ -65,8 +65,8 @@ def create_config(phaselistfile, jobdir, confdir, outcar="OUTCAR", poscar="POSCA
     open(confdir + "/phases.conf", 'w').close()     # Delete file contents
     with open(cfgfile, "a") as f:
         # Write the path of the job output directory for future reference
-        f.write("\tdftdir=" + jobdir + "\n")
-        f.write("\tprojectdir=" + confdir + "\n")
+        f.write("dftdir=" + jobdir + "\n")
+        f.write("projectdir=" + confdir + "\n")
         f.write("\n")
         for phase in phasedirdict:
             f.write("[" + phase + "]\n")
