@@ -103,15 +103,15 @@ def read_config(confdir):
     return phasedict
 
 
-def read_dftdir(confdir):
+def read_dftdir(configfile):
     cfg = configparser.ConfigParser()
-    cfg.read(confdir + "/phases.conf")
+    cfg.read(configfile)
     return cfg.get("DEFAULT", "dftdir")
 
 
-def read_projectdir(confdir):
+def read_projectdir(configfile):
     cfg = configparser.ConfigParser()
-    cfg.read(confdir + "/phases.conf")
+    cfg.read(configfile)
     return cfg.get("DEFAULT", "projectdir")
 
 
