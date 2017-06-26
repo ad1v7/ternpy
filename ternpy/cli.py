@@ -5,7 +5,7 @@ Usage:
   ternpy hi
   ternpy config [((-p | --phaselist) FILE)] [((-j | --dftdir) PATH)]
             [((-d | --projectdir) PROJECTDIR)]
-  ternpy extract
+  ternpy extract ((-c | --configfile) FILE)
   ternpy -h | --help
   ternpy --version
 
