@@ -65,8 +65,9 @@ def create_config(phaselistfile, jobdir, confdir, outcar="OUTCAR", poscar="POSCA
     open(confdir + "/phases.conf", 'w').close()     # Delete file contents
     with open(cfgfile, "a") as f:
         # Write the path of the job output directory for future reference
-        f.write("dftdir=" + jobdir + "\n")
-        f.write("projectdir=" + confdir + "\n")
+        f.write("[Directories]\n")
+        f.write("\tdftdir=" + jobdir + "\n")
+        f.write("\tprojectdir=" + confdir + "\n")
         f.write("\n")
         for phase in phasedirdict:
             f.write("[" + phase + "]\n")
@@ -89,7 +90,7 @@ def read_config(configfile):
     cfg = configparser.ConfigParser()
     cfg.read(configfile)
     for phase in dict(cfg.items()):
-        if phase != "DEFAULT":
+        if phase != "DEFAULT" and phase != "Directories":
             phasedict[phase] = {}
             phasedict[phase]["name"] = cfg.get(phase, "name")
             phasedict[phase]["plotname"] = cfg.get(phase, "plotname")
@@ -106,13 +107,13 @@ def read_config(configfile):
 def read_dftdir(configfile):
     cfg = configparser.ConfigParser()
     cfg.read(configfile)
-    return cfg.get("DEFAULT", "dftdir")
+    return cfg.get("Directories", "dftdir")
 
 
 def read_projectdir(configfile):
     cfg = configparser.ConfigParser()
     cfg.read(configfile)
-    return cfg.get("DEFAULT", "projectdir")
+    return cfg.get("Directories", "projectdir")
 
 
 # Creates mesh files for P, T data containing many types of energies.
