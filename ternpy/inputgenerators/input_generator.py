@@ -1,48 +1,51 @@
+import os
 import numpy as np
 from collections import OrderedDict
 import json
 from ternpy.utils.stoichbalancer import balance
 from ternpy.configcreator import phaseconfig
 
-#from ...utils.stoichbalancer import balance_interface
-#from ...configcreator import phaseconfig
-
-#from .. import utils
-#from utils import stoichbalancer
-#from stoichbalancer import balance_interface
-
-#from .. import configcreator
-#from configcreator import phaseconfig
-
-ternary = ['MgO', 'SiO2', 'Ice']
-
 
 class InputGenerator:
 
-    # allphases = dict created during data extraction from the VASP run
-    # ternary = list of names for ternary corners (e.g. 'Mgo')
+    # configfile: path to the config file
+    # ternary: path to file with ternary corners
     # ternary corner names must match names in allphases dict
     # list order is as follows
     # ['a', 'b', 'c'] corresponds to:
     #                c
     #               a b
-    def __init__(self, ternary):
+    def __init__(self, ternary, configfile):
         # self.allphases = allphases
-        self.allphases = phaseconfig.read_config("configs")
-        self.ternary = ternary
-        self.tern_phases, self.compositions = self.get_phases(ternary)
+        self.allphases = phaseconfig.read_config(configfile)
+        self.ternary = self.read_ternary(ternary)
+        self.tern_phases, self.compositions = self.get_phases(self.ternary)
         coords = self.get_coords()
+        self.projectdir = os.path.dirname(os.path.abspath(ternary))
 
         # and 'comp' (decomposition) and 'coord' (x,y coordinates)
         # keys to the dictionary and asign corresponding values
         for ph, comp, xy in zip(self.tern_phases, self.compositions, coords):
             self.tern_phases[ph]['comp'] = comp
             self.tern_phases[ph]['coords'] = xy
+
         self.data = self.load_data()
-        self.pressures = self.data.itervalues().next().itervalues().next()['P']
+        self.pressures = self.get_press_range()
         # save config file which contains only phases within ternary diagram
         self.save_config()
-        # print(self.tern_phases)
+
+    def get_press_range(self):
+        pressures = self.data.itervalues().next().itervalues().next()['P']
+        for data in self.data.itervalues():
+            for entry in data.itervalues():
+                pressures = list(set(pressures).intersection(entry['P']))
+        return sorted(pressures)
+
+    # read ternary file
+    # returns list of ternary corners
+    def read_ternary(self, ternary):
+        with open(ternary, 'r') as f:
+            return f.readline().split()
 
     # load energy data from files and returns dictionary
     def load_data(self):
@@ -161,12 +164,14 @@ class InputGenerator:
     def generate_files(self):
         for p, press in enumerate(self.pressures):
             arr = self.get_all_enthalpies(p)
-            pos_h = []
+            pos_h = []  # list to store indices of phases with rel_h > 0
             for i, row in enumerate(arr):
                 if row[2] > 0.:
                     pos_h.append(i)
             arr = np.delete(arr, pos_h, axis=0)
-            fname = str(press)+'.in'
+            fname = self.projectdir + '/inputfiles/' + str(press)+'.in'
+            if not os.path.exists(os.path.dirname(fname)):
+                os.makedirs(os.path.dirname(fname))
             rows, cols = arr.shape
             if rows > 3:
                 with open(fname, 'w') as f:
@@ -175,8 +180,9 @@ class InputGenerator:
                     np.savetxt(f, arr, fmt=['%.15f', '%.15f', '%.15f'])
 
 if __name__ == '__main__':
-    IG = InputGenerator(ternary)
+    #IG = InputGenerator(ternary, configfile)
     # data = np.genfromtxt(sys.argv[1], names=True)
     # config = np.genfromtxt(sys.argv[2], usecols=(1, 2, 3))
     # IG = InputGenerator(config, data)
-    IG.generate_files()
+    #IG.generate_files()
+    pass

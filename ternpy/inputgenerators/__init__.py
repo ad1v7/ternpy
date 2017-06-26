@@ -1,2 +1,2 @@
-from utils.stoichbalancer import balance_interface
-from configcreator import phaseconfig
+from ternpy.utils.stoichbalancer import balance
+from ternpy.configcreator import phaseconfig
