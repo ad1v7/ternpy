@@ -15,13 +15,16 @@ class InputGenerator:
     # ['a', 'b', 'c'] corresponds to:
     #                c
     #               a b
-    def __init__(self, ternary, configfile):
+    def __init__(self, ternary, configfile, ternary_name):
         # self.allphases = allphases
         self.allphases = phaseconfig.read_config(configfile)
-        self.ternary = self.read_ternary(ternary)
+        #self.ternary = self.read_ternary(ternary)
+        self.ternary = ternary
         self.tern_phases, self.compositions = self.get_phases(self.ternary)
         coords = self.get_coords()
-        self.projectdir = os.path.dirname(os.path.abspath(ternary))
+        self.projectdir = os.path.dirname(os.path.abspath(configfile))
+        self.projectdir += '/'+ternary_name
+        print self.projectdir
 
         # and 'comp' (decomposition) and 'coord' (x,y coordinates)
         # keys to the dictionary and asign corresponding values
@@ -34,6 +37,7 @@ class InputGenerator:
         # save config file which contains only phases within ternary diagram
         self.save_config()
 
+    # Returns list of pressure points which exists for every structure
     def get_press_range(self):
         pressures = self.data.itervalues().next().itervalues().next()['P']
         for data in self.data.itervalues():
@@ -43,6 +47,7 @@ class InputGenerator:
 
     # read ternary file
     # returns list of ternary corners
+    # NOT USED
     def read_ternary(self, ternary):
         with open(ternary, 'r') as f:
             return f.readline().split()
