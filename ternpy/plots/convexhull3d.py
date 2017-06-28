@@ -5,6 +5,7 @@ import os
 import time
 import math
 import re
+import json
 
 from scipy.spatial import ConvexHull
 from matplotlib.tri import Triangulation
@@ -23,12 +24,18 @@ from matplotlib.tri import Triangulation
 # one way is too look at x,y and possibly z coordinates
 # and then get name from InputGenerator.tern_phases
 
+# TODO: Sort class dependancies, use inheritance to simplify __init__
+
 
 class ConvexHullData:
-    def __init__(self, file_list):
+    def __init__(self, file_list, tern_phases):
         self.data, self.pressures, self.filenames = self.load_data(file_list)
         self.convex_hulls = self.get_all_convex_hulls(self.data)
         self.minz = self.min_z(self.data, self.convex_hulls)
+        with open(tern_phases) as data_file:
+            self.tern_phases = json.load(data_file)
+        self.projectdir = os.path.abspath(os.path.dirname(tern_phases))
+        #self.tern_phases = tern_phases
 
     # returns array containg xyz data and pressures
     def load_data(self, file_list):
@@ -86,7 +93,8 @@ class PlotConvexHull:
         self.showbar = kwargs.get('showbar', False)
         self.contour_step = abs(self.CHD.minz)/self.steps
         if self.savefig:
-            self.newdir = time.strftime("%d-%m-%y_%H:%M:%S")
+            self.newdir = (self.CHD.projectdir + '/' +
+                           time.strftime("%d-%m-%y_%H:%M:%S"))
             os.mkdir(self.newdir, 0o755)
         # appending 2 small values to avoid issues (white background)
         # when convex hull z value is close to 0
@@ -97,9 +105,10 @@ class PlotConvexHull:
     def savefigure(self, filename):
         savefile = os.path.basename(filename)
         savefile = os.path.splitext(savefile)[0] + '.png'
-        plt.savefig(self.newdir+"/"+savefile, bbox_inches='tight', dpi=300)
+        fname = self.newdir + '/' + savefile
+        plt.savefig(fname, bbox_inches='tight', dpi=300)
         print (os.path.basename(filename) +
-               " output saved to " + self.newdir+"/"+savefile)
+               " output saved to " + fname)
 
     def colorbar(self, cax):
         # colorbar label
@@ -114,12 +123,12 @@ class PlotConvexHull:
         labels = [re.sub("([0-9])", "_\\1", k) for k in labels]
         return ['$\mathregular{'+k+'}$' for k in labels]
 
-    def plot_all(self, ConvexHullData):
-        for i in range(len(ConvexHullData.data)):
-            data = ConvexHullData.data[i]
-            hull_data = ConvexHullData.convex_hulls[i]
-            pressure = ConvexHullData.pressures[i]
-            filename = ConvexHullData.filenames[i]
+    def plot_all(self):
+        for i in range(len(self.CHD.data)):
+            data = self.CHD.data[i]
+            hull_data = self.CHD.convex_hulls[i]
+            pressure = self.CHD.pressures[i]
+            filename = self.CHD.filenames[i]
             self.plot(data, hull_data, pressure, filename)
 
     def plot(self, data, hull_data, pressure, filename):
@@ -165,6 +174,7 @@ class PlotConvexHull:
         if self.showfig:
             plt.show()
 
+
 # Class to find and hold metastable points
 # together with relevant functions
 # such as finding decomposition reaction and its strength
@@ -173,6 +183,7 @@ class FindMetastable:
         self.hulls = CHD.convex_hulls
         self.data = CHD.data
         self.pressures = CHD.pressures
+        self.tern_phases = CHD.tern_phases
         # below all have the same order and
         # should have the same number of elements
         self.vertices = self.get_all_vertices()
@@ -342,7 +353,7 @@ class FindMetastable:
                     triangles.append([A, B, C])
                     counter += 1
             if counter > 1:
-                triangles = np.delete(triangles,obj=triangles[0], axis=0)
+                triangles = np.delete(triangles, obj=triangles[0], axis=0)
             all_triangles.append(triangles)
         return np.array(all_triangles)
 
@@ -352,8 +363,6 @@ class FindMetastable:
     #
     # THIS FUNCTION NEEDS OUTPUT TO BE FORMATTED
     #
-    # ISSUE: if decomposition line is shared by two triangles
-    # function will print the same line twice
     def find_decomposition(self, point, tri_set):
         for tri in tri_set:
             tribool, triangle = self.is_point_inside_triangle(point, tri)
@@ -369,6 +378,7 @@ class FindMetastable:
                 print(line)
                 print('Distance:')
                 print(self.point_distance_to_line(point, line[1:]))
+                print(self.xy_to_name(point))
                 print('--------------')
                 # this is because line can be shared by more than one triangle
                 break
@@ -396,15 +406,23 @@ class FindMetastable:
     # in fact this helper function is likely to be
     # usefull for many other situations so it should go to utils
     def xy_to_name(self, point):
-        return 'Hmmmpff'
+        phases = self.tern_phases
+        for ph in phases:
+            x = ph['coords'][0]
+            y = ph['coords'][1]
+            if self.isclose(x, point(0)) and self.isclose(y, point(1)):
+                return ph['name']
+        return 'Phase Not Found'
 
+    def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
+        return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 
 if __name__ == '__main__':
-    hull = ConvexHullData(sys.argv[1:])
-    hull_plotter = PlotConvexHull(hull, steps=12)
-    hull_plotter.plot_all(hull)
-    #MS = FindMetastable(hull)
+    hull = ConvexHullData(sys.argv[2:], sys.argv[1])
+    #hull_plotter = PlotConvexHull(hull, steps=12)
+    #hull_plotter.plot_all(hull)
+    MS = FindMetastable(hull)
     #point = np.array([1, .5, 1])
     #A = np.array([0.33, 0.33, 0.33])
     #B = np.array([1., 1., 1.])
@@ -428,4 +446,4 @@ if __name__ == '__main__':
     #print('xxxxxxxx')
     #print('MetaStable')
     #print(MS.metastable)
-    #print(MS.find_all_decomposition())
+    print(MS.find_all_decomposition())

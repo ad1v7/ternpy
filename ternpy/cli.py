@@ -6,7 +6,9 @@ Usage:
   ternpy config [((-p | --phaselist) FILE)] [((-j | --dftdir) PATH)]
             [((-d | --projectdir) PROJECTDIR)]
   ternpy extract ((-c | --configfile) FILE)
-  ternpy terninput (-c | --configfile) FILE
+  ternpy newternary (-c | --configfile) FILE
+  ternpy tplot (-t | --ternconfig) FILE (-i | --input) INFILE...
+  ternpy getmeta (-t | --ternconfig) FILE (-i | --input) INFILE...
 
   ternpy -h | --help
   ternpy --version

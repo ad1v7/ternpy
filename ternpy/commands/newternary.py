@@ -1,4 +1,4 @@
-"""The terninput command."""
+"""The newternary command."""
 
 from .base import Base
 from ternpy.inputgenerators import input_generator
@@ -10,7 +10,7 @@ except NameError:
     pass
 
 
-class TernInput(Base):
+class NewTernary(Base):
     """An tt command."""
 
     def run(self):

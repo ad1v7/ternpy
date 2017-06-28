@@ -24,7 +24,6 @@ class InputGenerator:
         coords = self.get_coords()
         self.projectdir = os.path.dirname(os.path.abspath(configfile))
         self.projectdir += '/'+ternary_name
-        print self.projectdir
 
         # and 'comp' (decomposition) and 'coord' (x,y coordinates)
         # keys to the dictionary and asign corresponding values
@@ -68,6 +67,10 @@ class InputGenerator:
         fname = (self.ternary[0] + '-' +
                  self.ternary[1] + '-' +
                  self.ternary[2] + '.json')
+        fname = self.projectdir + '/' + fname
+        print fname
+        if not os.path.exists(self.projectdir):
+            os.makedirs(self.projectdir)
         with open(fname, "w") as f:
             json.dump(self.tern_phases, f, indent=3)
 
