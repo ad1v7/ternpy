@@ -154,13 +154,13 @@ def create_datafiles(configfile, jobdir, outcar="OUTCAR", poscar="POSCAR"):
                             press = extractdata._vasp_press(dirpath, outcar)
 
                             enthalpy = extractdata._vasp_enthalpy(dirpath, outcar)
-                            if enthalpy is None:
+                            if enthalpy is not None:
                                 enthalpy /= fu_per_ucell
                             intenergy = extractdata._vasp_internalenergy(dirpath, outcar)
-                            if intenergy is None:
+                            if intenergy is not None:
                                 intenergy /= fu_per_ucell
                             pvterm = extractdata._vasp_pv(dirpath, outcar)
-                            if pvterm is None:
+                            if pvterm is not None:
                                 pvterm /= fu_per_ucell
 
                             energies[phase][struct]["P"].append(float(press))
@@ -192,7 +192,7 @@ def create_datafiles(configfile, jobdir, outcar="OUTCAR", poscar="POSCAR"):
             os.makedirs("energies")
         for struct in phasedict[phase]["structures"]:
             with open("energies/" + struct + ".dat", "w") as f:
-                f.write("P\tT\tH\tE\tPV\tG\tF\n")
+                f.write("P\tT\tE\tH\tPV\tG\tF\n")
                 for idx, press in enumerate(energies[phase][struct]["P"]):
                     line = "{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\t{:.10f}\n".format(
                                                                  float(energies[phase][struct]["P"][idx]),
