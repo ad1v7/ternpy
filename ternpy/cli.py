@@ -5,7 +5,7 @@ Usage:
   ternpy hi
   ternpy config [((-p | --phaselist) FILE)] [((-j | --dftdir) PATH)]
             [((-d | --projectdir) PROJECTDIR)]
-  ternpy extract ((-c | --configfile) FILE)
+  ternpy extract (-c | --configfile) FILE
   ternpy newternary (-c | --configfile) FILE
   ternpy tplot (-t | --ternconfig) FILE (-i | --input) INFILE...
   ternpy getmeta (-t | --ternconfig) FILE (-i | --input) INFILE...
@@ -18,7 +18,7 @@ Options:
   --version                         Show version.
 
 Examples:
-  ternpy config -p PhaseListFile -j ~/MyData -d ~/MyProject
+  ternpy config -p PhaseListFile -j ~/MyData
 
 Help:
   For help using this tool, please open an issue on the Github repository:
