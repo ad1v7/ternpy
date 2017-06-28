@@ -10,20 +10,8 @@ import json
 from scipy.spatial import ConvexHull
 from matplotlib.tri import Triangulation
 
-# consider adding title
-# where corner labels are comming from
 # sort colorbar issues
 # docstrings and unit test...
-
-# consider:
-# self.ternary = ['Mgo', 'SiO2', 'Phase H']
-# same as for input generator, names must correspond
-# to phase names in original config file + match names of *.dat files
-#
-# How to identify phases in convex hull plot?
-# one way is too look at x,y and possibly z coordinates
-# and then get name from InputGenerator.tern_phases
-
 # TODO: Sort class dependancies, use inheritance to simplify __init__
 
 
@@ -124,6 +112,9 @@ class PlotConvexHull:
         return ['$\mathregular{'+k+'}$' for k in labels]
 
     def plot_all(self):
+        print(len(self.CHD.data))
+        print(len(self.CHD.data))
+        print(len(self.CHD.data))
         for i in range(len(self.CHD.data)):
             data = self.CHD.data[i]
             hull_data = self.CHD.convex_hulls[i]
@@ -273,8 +264,8 @@ class FindMetastable:
         nearest = test * line_vec
         dist = np.linalg.norm(nearest-point_vec)
         nearest = nearest + A
-        return (dist, nearest)
-        #return dist
+        #return (dist, nearest)
+        return dist
 
     # converts given vector to unit vector
     def vec_to_unitvec(self, vec):
@@ -361,51 +352,36 @@ class FindMetastable:
     # find relevant decomposition reaction
     # aka find triangle or triangle edge to which point belongs to
     # from the set of all triangles
-    #
-    # THIS FUNCTION NEEDS OUTPUT TO BE FORMATTED
-    #
     def find_decomposition(self, point, tri_set):
         for tri in tri_set:
             tribool, triangle = self.is_point_inside_triangle(point, tri)
             linebool, line = self.is_point_on_tri_edge(point, tri)
             if tribool:
-                print('Triangle:')
-                print(triangle)
-                print('Distance:')
-                print(self.point_distance_to_plane(point, triangle[1:]))
-                print('--------------')
-                return (self.xy_to_name(triangle[0]) + '->' +
-                        self.xy_to_name(triangle[1]) +
-                        self.xy_to_name(triangle[2]) +
-                        self.xy_to_name(triangle[3]))
+                return (self.xy_to_name(triangle[0]) + ' -> ' +
+                        self.xy_to_name(triangle[1]) + ' + ' +
+                        self.xy_to_name(triangle[2]) + ' + ' +
+                        self.xy_to_name(triangle[3]) +
+                        '\n Distance to plane: ' +
+                        str(self.point_distance_to_plane(point, triangle[1:]))
+                        + '\n')
             elif linebool:
-                print('Line:')
-                print(line)
-                print('Distance:')
-                print(self.point_distance_to_line(point, line[1:]))
-                print(self.xy_to_name(point))
-                print('--------------')
-                return (self.xy_to_name(line[0]) + '->' +
-                        self.xy_to_name(line[1]) +
-                        self.xy_to_name(line[2]))
+                return (self.xy_to_name(line[0]) + ' -> ' +
+                        self.xy_to_name(line[1]) + ' + ' +
+                        self.xy_to_name(line[2]) +
+                        '\n Distance to line: ' +
+                        str(self.point_distance_to_line(point, line[1:]))
+                        + '\n')
                 # this is because line can be shared by more than one triangle
 
     # currently prints all metastable points at a given pressure
     # and relevant decomopostion reaction
     # (and loop is over pressures/files)
-    #
-    # THIS FUNCTION NEEDS OUTPUT TO BE FORMATTED
-    #
     def find_all_decomposition(self):
         savedir = self.projectdir+'/meta/'
         if not os.path.exists(savedir):
             os.makedirs(savedir)
         for points, press, tri_set in zip(self.metastable, self.pressures,
                                           self.triangles):
-
-            print('-------')
-            print(press)
-            print('-------')
             metastring = ''
             for point in points:
                 metastring += self.find_decomposition(point, tri_set)
@@ -413,32 +389,30 @@ class FindMetastable:
 
             with open(savedir+press+'.meta', 'w') as f:
                 f.write(metastring)
+        print('Output saved to ' + savedir)
 
-    # function finds phase name given
-    # numpy array (x,y) coordinate
-    #
-    # ? where are phase names comming from ?
-    #
-    # in fact this helper function is likely to be
-    # usefull for many other situations so it should go to utils
+    # function finds phase name given (x,y) coordinate
     def xy_to_name(self, point):
         phases = self.tern_phases
         for ph in phases:
-            x = ph['coords'][0]
-            y = ph['coords'][1]
-            if self.isclose(x, point(0)) and self.isclose(y, point(1)):
-                return ph['name']
+            x = self.tern_phases[ph]['coords'][0]
+            y = self.tern_phases[ph]['coords'][1]
+            if self.isclose(x, point[0]) and self.isclose(y, point[1]):
+                return self.tern_phases[ph]['name']
         return 'Phase Not Found'
 
-    def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
+    def isclose(self, a, b):
+        rel_tol = 1e-09
+        abs_tol = 0.0
         return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 
 if __name__ == '__main__':
     hull = ConvexHullData(sys.argv[2:], sys.argv[1])
-    #hull_plotter = PlotConvexHull(hull, steps=12)
-    #hull_plotter.plot_all(hull)
-    MS = FindMetastable(hull)
+    print(hull.convex_hulls[0].vertices)
+    hull_plotter = PlotConvexHull(hull, steps=12)
+    hull_plotter.plot_all()
+    #MS = FindMetastable(hull)
     #point = np.array([1, .5, 1])
     #A = np.array([0.33, 0.33, 0.33])
     #B = np.array([1., 1., 1.])
@@ -462,4 +436,4 @@ if __name__ == '__main__':
     #print('xxxxxxxx')
     #print('MetaStable')
     #print(MS.metastable)
-    print(MS.find_all_decomposition())
+    #print(MS.find_all_decomposition())
