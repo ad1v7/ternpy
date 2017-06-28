@@ -149,17 +149,17 @@ def create_datafiles(configfile, jobdir, outcar="OUTCAR", poscar="POSCAR"):
                             print(dirpath)
 
                             # Rescale everything in terms of energies per formula unit
-                            fu_per_ucell = extractdata._vasp_fu_per_ucell(dirpath)
+                            fu_per_ucell = float(extractdata._vasp_fu_per_ucell(dirpath))
 
                             press = extractdata._vasp_press(dirpath, outcar)
 
-                            enthalpy = extractdata._vasp_enthalpy(dirpath, outcar)
+                            enthalpy = float(extractdata._vasp_enthalpy(dirpath, outcar))
                             if enthalpy is not None:
                                 enthalpy /= fu_per_ucell
-                            intenergy = extractdata._vasp_internalenergy(dirpath, outcar)
+                            intenergy = float(extractdata._vasp_internalenergy(dirpath, outcar))
                             if intenergy is not None:
                                 intenergy /= fu_per_ucell
-                            pvterm = extractdata._vasp_pv(dirpath, outcar)
+                            pvterm = float(extractdata._vasp_pv(dirpath, outcar))
                             if pvterm is not None:
                                 pvterm /= fu_per_ucell
 
