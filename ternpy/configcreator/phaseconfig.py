@@ -147,10 +147,21 @@ def create_datafiles(configfile, jobdir, outcar="OUTCAR", poscar="POSCAR"):
                         if struct in dirpath:
                             print("Extracting from:")
                             print(dirpath)
+
+                            # Rescale everything in terms of energies per formula unit
+                            fu_per_ucell = extractdata._vasp_fu_per_ucell(dirpath)
+
                             press = extractdata._vasp_press(dirpath, outcar)
+
                             enthalpy = extractdata._vasp_enthalpy(dirpath, outcar)
+                            if enthalpy is None:
+                                enthalpy /= fu_per_ucell
                             intenergy = extractdata._vasp_internalenergy(dirpath, outcar)
+                            if intenergy is None:
+                                intenergy /= fu_per_ucell
                             pvterm = extractdata._vasp_pv(dirpath, outcar)
+                            if pvterm is None:
+                                pvterm /= fu_per_ucell
 
                             energies[phase][struct]["P"].append(float(press))
                             energies[phase][struct]["T"].append(float('inf'))
@@ -199,4 +210,4 @@ if __name__ == "__main__":
     # create_datafile("joboutput/Quartz/alpha-quartz/80", "./", "test.dat")
     # create_config("phaselist.conf", "joboutput", "configs")
     # print(read_config("configs"))
-    create_datafiles("configs", "joboutput")
+    create_datafiles("configs/phases.conf", "joboutput")

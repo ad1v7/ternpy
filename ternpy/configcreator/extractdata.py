@@ -46,6 +46,27 @@ def _vasp_chemformula(dir, outcar="OUTCAR", poscar="POSCAR"):
     return chemform
 
 
+# Returns the no. of formula units per unit cell, which is the gcd of the numbers of each atom present in a unit cell.
+def _vasp_fu_per_ucell(dir, poscar="POSCAR"):
+    with open(dir + "/" + poscar) as f:
+        lines = f.readlines()
+        if all(item.isdigit() for item in lines[5].split()):
+            numbers = [int(number) for number in lines[5].split()]
+        else:
+            numbers = [int(number) for number in lines[6].split()]
+
+    def gcd(a, b):
+        if b == 0:
+            return a
+        else:
+            return gcd(b, a % b)
+
+    def gcd_list(list):
+        return reduce(gcd, tuple(list))
+
+    return gcd_list(numbers)
+
+
 def _vasp_atoms(dir, outcar="OUTCAR"):
     atoms = []
     if not os.path.isfile(dir + "/" + outcar):
@@ -80,12 +101,6 @@ def _vasp_natoms(dir, poscar="POSCAR"):
     numbers = [int(num / gcd_list(numbers)) for num in numbers]
 
     return numbers
-
-
-# TODO
-# Returns the number of f.u.'s per unit cell.
-def _vasp_fu_per_ucell(dir):
-    pass
 
 
 # Obtains the enthalpy term from a VASP OUTCAR file.
