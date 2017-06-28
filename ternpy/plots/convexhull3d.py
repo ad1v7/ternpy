@@ -180,6 +180,7 @@ class PlotConvexHull:
 # such as finding decomposition reaction and its strength
 class FindMetastable:
     def __init__(self, CHD):
+        self.projectdir = CHD.projectdir
         self.hulls = CHD.convex_hulls
         self.data = CHD.data
         self.pressures = CHD.pressures
@@ -373,6 +374,10 @@ class FindMetastable:
                 print('Distance:')
                 print(self.point_distance_to_plane(point, triangle[1:]))
                 print('--------------')
+                return (self.xy_to_name(triangle[0]) + '->' +
+                        self.xy_to_name(triangle[1]) +
+                        self.xy_to_name(triangle[2]) +
+                        self.xy_to_name(triangle[3]))
             elif linebool:
                 print('Line:')
                 print(line)
@@ -380,8 +385,10 @@ class FindMetastable:
                 print(self.point_distance_to_line(point, line[1:]))
                 print(self.xy_to_name(point))
                 print('--------------')
+                return (self.xy_to_name(line[0]) + '->' +
+                        self.xy_to_name(line[1]) +
+                        self.xy_to_name(line[2]))
                 # this is because line can be shared by more than one triangle
-                break
 
     # currently prints all metastable points at a given pressure
     # and relevant decomopostion reaction
@@ -390,13 +397,22 @@ class FindMetastable:
     # THIS FUNCTION NEEDS OUTPUT TO BE FORMATTED
     #
     def find_all_decomposition(self):
+        savedir = self.projectdir+'/meta/'
+        if not os.path.exists(savedir):
+            os.makedirs(savedir)
         for points, press, tri_set in zip(self.metastable, self.pressures,
                                           self.triangles):
+
             print('-------')
             print(press)
             print('-------')
+            metastring = ''
             for point in points:
-                self.find_decomposition(point, tri_set)
+                metastring += self.find_decomposition(point, tri_set)
+                metastring += '\n'
+
+            with open(savedir+press+'.meta', 'w') as f:
+                f.write(metastring)
 
     # function finds phase name given
     # numpy array (x,y) coordinate

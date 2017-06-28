@@ -13,4 +13,4 @@ class GetMeta(Base):
 
         hull = convexhull3d.ConvexHullData(file_list, tern_phases)
         meta = convexhull3d.FindMetastable(hull)
-        print(meta.find_all_decomposition())
+        meta.find_all_decomposition()
