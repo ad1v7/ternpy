@@ -9,6 +9,8 @@ import json
 
 from scipy.spatial import ConvexHull
 from matplotlib.tri import Triangulation
+from collections import OrderedDict
+from ternpy.utils.stoichbalancer import balance
 
 # sort colorbar issues
 # docstrings and unit test...
@@ -357,6 +359,8 @@ class FindMetastable:
             tribool, triangle = self.is_point_inside_triangle(point, tri)
             linebool, line = self.is_point_on_tri_edge(point, tri)
             if tribool:
+                phasenames = [self.xy_to_name(pt) for pt in triangle]
+                self.relative_enthalpy(phasenames, 1)
                 return (self.xy_to_name(triangle[0]) + ' -> ' +
                         self.xy_to_name(triangle[1]) + ' + ' +
                         self.xy_to_name(triangle[2]) + ' + ' +
@@ -365,6 +369,9 @@ class FindMetastable:
                         str(self.point_distance_to_plane(point, triangle[1:]))
                         + '\n')
             elif linebool:
+                phasenames = [self.xy_to_name(pt) for pt in line]
+                print phasenames
+                self.relative_enthalpy(phasenames, 1)
                 return (self.xy_to_name(line[0]) + ' -> ' +
                         self.xy_to_name(line[1]) + ' + ' +
                         self.xy_to_name(line[2]) +
@@ -406,6 +413,29 @@ class FindMetastable:
         abs_tol = 0.0
         return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
+    # returns relative enthalpy of formation at given pressure
+    # p - pressure
+    # phasenames - list of phasenames
+    # e.g for H2O -> H + O list is [H2O, H, O]
+    # nhs is number of compounds on the left hand side
+    # of the arrow. For above example nhs=1.
+    def relative_enthalpy(self, phasenames, lhs):
+        phasedict = self.get_phase_data(phasenames)
+        #print phasedict
+        test, composition = balance(phasedict, lhs)
+
+    # returns 'full' phase record given list of phase names
+    # TODO
+    # THIS IS almost EXACT COPY FROM INPUTGENERATOR
+    # PROBABLY IT MAKE SENS TO MOVE IT TO UTILS
+    def get_phase_data(self, phaselist):
+        phase_dict = OrderedDict()
+        for phase in phaselist:
+            try:
+                phase_dict[phase] = self.tern_phases[phase]
+            except KeyError:
+                print('No key in main dict: ' + phase)
+        return phase_dict
 
 if __name__ == '__main__':
     hull = ConvexHullData(sys.argv[2:], sys.argv[1])

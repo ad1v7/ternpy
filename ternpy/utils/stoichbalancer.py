@@ -100,7 +100,7 @@ def balance_engine(mtx):
         # must be converted to identity matrix
         for i in range(rows-1, rows-1-counter, -1):
             mtx[i, i] = 1
-    else:
+    elif cols > rows:
         rank = l.matrix_rank(mtx)
         nullity = cols - rank
         # add nullity number of extra rows to the bottom
@@ -111,6 +111,23 @@ def balance_engine(mtx):
             newrow[-i] = 1.
             newrow = np.matrix(newrow)
             mtx = np.vstack([mtx, newrow])
+    else:
+        rank = l.matrix_rank(mtx)
+        nullity = cols - rank
+        # compute reduced row echelon form
+        mtx = np.asarray(Matrix(mtx).rref()[0])
+        # remove rows with all zeros
+        mtx = mtx[~np.all(mtx == 0, axis=1)]
+        mtx = np.matrix(mtx)
+        # add nullity number of extra rows to the bottom
+        # the RHS nullity x nullity dimension partition matrix
+        # must be idenity, set rest to zeros
+        for i in range(nullity, 0, -1):
+            newrow = np.zeros(cols)
+            newrow[-i] = 1.
+            newrow = np.matrix(newrow)
+            mtx = np.vstack([mtx, newrow])
+
     # need to convert matrix dtype back to float
     mtx = mtx.astype(float)
     # compute invers
