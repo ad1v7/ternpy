@@ -32,9 +32,19 @@ class InputGenerator:
             self.tern_phases[ph]['coords'] = xy
 
         self.data = self.load_data()
+        print self.data
+        # self.pressures is a  list of floats
         self.pressures = self.get_press_range()
         # save config file which contains only phases within ternary diagram
         self.save_config()
+        for phase in self.data:
+            for poly in self.data[phase]:
+                matrix = self.data[phase][poly]
+                newmatrix = []
+                for line in matrix:
+                    if line[0] in self.pressures:
+                        newmatrix.append(line)
+                self.data[phase][poly] = np.array(newmatrix)
 
     # Returns list of pressure points which exists for every structure
     def get_press_range(self):
@@ -52,6 +62,7 @@ class InputGenerator:
             return f.readline().split()
 
     # load energy data from files and returns dictionary
+    # TODO load only data in the pressure range
     def load_data(self):
         d = {}
         direc = 'energies/'
@@ -171,6 +182,8 @@ class InputGenerator:
     # to generate files ready for convex hull plotter
     def generate_files(self):
         for p, press in enumerate(self.pressures):
+            # p index is not always right
+            # TODO
             arr = self.get_all_enthalpies(p)
             pos_h = []  # list to store indices of phases with rel_h > 0
             for i, row in enumerate(arr):

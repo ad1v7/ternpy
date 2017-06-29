@@ -174,16 +174,18 @@ class PlotConvexHull:
 class FindMetastable:
     def __init__(self, CHD):
         self.projectdir = CHD.projectdir
+        self.CHD = CHD
         self.hulls = CHD.convex_hulls
         self.data = CHD.data
-        self.pressures = CHD.pressures
         self.tern_phases = CHD.tern_phases
+        self.datadict = self.load_data()
         # below all have the same order and
         # should have the same number of elements
         self.vertices = self.get_all_vertices()
         self.points = self.get_all_points()
         self.metastable = self.get_all_metastable()
         self.triangles = self.get_all_triangles()
+        self.pressures = self.get_press_range()
 
     # returns array of convex hull vertices
     def get_all_vertices(self):
@@ -224,7 +226,7 @@ class FindMetastable:
     # test is point already in metastable array
     # by comparing x and y coords
     # if found it tests for value of z components
-    # the point with lowest z component is saved in metastable
+    # the point with lowest z component is saved to metastable
     def is_smallest(self, p, metastable):
         found_one = False
         for meta in metastable:
@@ -354,47 +356,59 @@ class FindMetastable:
     # find relevant decomposition reaction
     # aka find triangle or triangle edge to which point belongs to
     # from the set of all triangles
-    def find_decomposition(self, point, tri_set):
+    def find_decomposition(self, point, tri_set, p):
         for tri in tri_set:
             tribool, triangle = self.is_point_inside_triangle(point, tri)
             linebool, line = self.is_point_on_tri_edge(point, tri)
             if tribool:
                 phasenames = [self.xy_to_name(pt) for pt in triangle]
-                self.relative_enthalpy(phasenames, 1)
-                return (self.xy_to_name(triangle[0]) + ' -> ' +
-                        self.xy_to_name(triangle[1]) + ' + ' +
-                        self.xy_to_name(triangle[2]) + ' + ' +
-                        self.xy_to_name(triangle[3]) +
+                rel_h, dec = self.relative_enthalpy(phasenames, p, 1)
+                rel_h = str(rel_h)
+                return (str(dec[0]) + ' * ' + self.xy_to_name(triangle[0])
+                        + ' -> ' +
+                        str(dec[1]) + ' * ' + self.xy_to_name(triangle[1])
+                        + ' + ' +
+                        str(dec[2]) + ' * ' + self.xy_to_name(triangle[2])
+                        + ' + ' +
+                        str(dec[3]) + ' * ' + self.xy_to_name(triangle[3]) +
                         '\n Distance to plane: ' +
                         str(self.point_distance_to_plane(point, triangle[1:]))
-                        + '\n')
+                        + '\n Relative enthalpy (eV): ' + rel_h +
+                        '\n')
             elif linebool:
                 phasenames = [self.xy_to_name(pt) for pt in line]
-                print phasenames
-                self.relative_enthalpy(phasenames, 1)
-                return (self.xy_to_name(line[0]) + ' -> ' +
-                        self.xy_to_name(line[1]) + ' + ' +
-                        self.xy_to_name(line[2]) +
+                rel_h, dec = self.relative_enthalpy(phasenames, p, 1)
+                rel_h = str(rel_h)
+                return (str(dec[0]) + ' * ' + self.xy_to_name(line[0])
+                        + ' -> ' +
+                        str(dec[1]) + ' * ' + self.xy_to_name(line[1])
+                        + ' + ' +
+                        str(dec[2]) + ' * ' + self.xy_to_name(line[2]) +
                         '\n Distance to line: ' +
                         str(self.point_distance_to_line(point, line[1:]))
-                        + '\n')
+                        + '\n Relative enthalpy (eV): ' + rel_h +
+                        '\n')
                 # this is because line can be shared by more than one triangle
 
-    # currently prints all metastable points at a given pressure
-    # and relevant decomopostion reaction
-    # (and loop is over pressures/files)
+    # loop over input files
+    # prints to meta directory *.meta files
+    # each file contains decomposition reaction
+    # distance to convex
+    # relative enthalpy for given decomposition reaction
     def find_all_decomposition(self):
         savedir = self.projectdir+'/meta/'
+        # make sure pressures are in kbar
+        pressures = [10*float(p) for p in self.CHD.pressures]
         if not os.path.exists(savedir):
             os.makedirs(savedir)
-        for points, press, tri_set in zip(self.metastable, self.pressures,
+        for points, press, tri_set in zip(self.metastable, pressures,
                                           self.triangles):
             metastring = ''
             for point in points:
-                metastring += self.find_decomposition(point, tri_set)
+                metastring += self.find_decomposition(point, tri_set, press)
                 metastring += '\n'
 
-            with open(savedir+press+'.meta', 'w') as f:
+            with open(savedir+str(press)+'.meta', 'w') as f:
                 f.write(metastring)
         print('Output saved to ' + savedir)
 
@@ -408,26 +422,65 @@ class FindMetastable:
                 return self.tern_phases[ph]['name']
         return 'Phase Not Found'
 
+    # compare to float, returns true if they do not differ more than rel_tol
     def isclose(self, a, b):
         rel_tol = 1e-09
         abs_tol = 0.0
         return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
     # returns relative enthalpy of formation at given pressure
-    # p - pressure
+    # press - pressure value
     # phasenames - list of phasenames
     # e.g for H2O -> H + O list is [H2O, H, O]
-    # nhs is number of compounds on the left hand side
-    # of the arrow. For above example nhs=1.
-    def relative_enthalpy(self, phasenames, lhs):
+    # lhs is number of compounds on the left hand side
+    # of the arrow. For above example lhs=1.
+    def relative_enthalpy(self, phasenames, press, lhs):
         phasedict = self.get_phase_data(phasenames)
-        #print phasedict
         test, composition = balance(phasedict, lhs)
+        phase_h = composition[0] * self.get_most_stable(phasenames[0], press)
+        num_of_molecules = sum(composition)
+        constituents_h = 0.
+        for i in range(1, len(phasenames)):
+            constituents_h += (composition[i] *
+                               self.get_most_stable(phasenames[i], press))
+        return ((phase_h - constituents_h) / num_of_molecules), composition
 
-    # returns 'full' phase record given list of phase names
     # TODO
-    # THIS IS almost EXACT COPY FROM INPUTGENERATOR
-    # PROBABLY IT MAKE SENS TO MOVE IT TO UTILS
+    # THIS IS !almost! EXACT COPY FROM INPUTGENERATOR
+    # Returns list of pressure points which exists for every structure
+    def get_press_range(self):
+        pressures = self.datadict.itervalues().next().itervalues().next()['P']
+        for data in self.datadict.itervalues():
+            for entry in data.itervalues():
+                pressures = list(set(pressures).intersection(entry['P']))
+        return sorted(pressures)
+
+    # TODO
+    # THIS IS !almost! EXACT COPY FROM INPUTGENERATOR
+    # returns lowest value of enthalpy
+    # for given phase and its polymorphs
+    def get_most_stable(self, phase, p):
+        i = self.pressures.index(p)
+        return min([self.datadict[phase][poly]['H'][i] for poly in
+                    self.datadict[phase]])
+
+    # TODO
+    # THIS IS !almost! EXACT COPY FROM INPUTGENERATOR
+    # load energy data from files and returns dictionary
+    def load_data(self):
+        d = {}
+        direc = os.path.dirname(self.projectdir) + '/energies/'
+        for ph in self.tern_phases.keys():
+            try:
+                d[ph] = {poly: np.genfromtxt(direc+poly+'.dat', names=True) for
+                         poly in self.tern_phases[ph]['structures']}
+            except IOError:
+                print('no file for', ph)
+        return d
+
+    # TODO
+    # returns 'full' phase record given list of phase names
+    # THIS IS !almost! EXACT COPY FROM INPUTGENERATOR
     def get_phase_data(self, phaselist):
         phase_dict = OrderedDict()
         for phase in phaselist:
