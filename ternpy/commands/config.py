@@ -21,4 +21,4 @@ class Config(Base):
         else:
             projectdir = '.'
 
-        phaseconfig.create_config(phaselist, dftdir, projectdir)
+        phaseconfig.extract(phaselist, dftdir, projectdir)
