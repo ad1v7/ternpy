@@ -32,11 +32,11 @@ class InputGenerator:
             self.tern_phases[ph]['coords'] = xy
 
         self.data = self.load_data()
-        print self.data
         # self.pressures is a  list of floats
         self.pressures = self.get_press_range()
         # save config file which contains only phases within ternary diagram
         self.save_config()
+        # keep only data for pressures in self.pressures
         for phase in self.data:
             for poly in self.data[phase]:
                 matrix = self.data[phase][poly]
@@ -68,7 +68,7 @@ class InputGenerator:
         direc = 'energies/'
         for ph in self.tern_phases.keys():
             try:
-                d[ph] = {poly: np.genfromtxt(direc+poly+'.dat', names=True) for
+                d[ph] = {poly: np.genfromtxt(direc+ph+'-'+poly+'.dat', names=True) for
                          poly in self.tern_phases[ph]['structures']}
             except IOError:
                 print('no file for', ph)
@@ -106,18 +106,18 @@ class InputGenerator:
         if phase in ternary:
             idx = ternary.index(phase)
             if idx == 0:
-                arr = [1, 0, 0]
+                arr = [1, 0, 0, 1]
             elif idx == 1:
-                arr = [0, 1, 0]
+                arr = [0, 1, 0, 1]
             elif idx == 2:
-                arr = [0, 0, 1]
+                arr = [0, 0, 1, 1]
             return True, arr
         else:
             temp = ternary[:]
             temp.append(phase)
             data = self.get_phase_data(temp)
             test, arr = balance(data, 3)
-            return test, arr[:3]
+            return test, arr
 
     # returns 'full' phase record given list of phase names
     def get_phase_data(self, phaselist):
@@ -146,16 +146,16 @@ class InputGenerator:
     #      a b
     #
     def enthalpy_of_formation(self, phase, poly, p):
-        num_of_molecules = sum(self.tern_phases[phase]['comp'])
-        abc = self.tern_phases[phase]['comp']
+        num_of_molecules = sum(self.tern_phases[phase]['comp'][:3])
+        pabc = self.tern_phases[phase]['comp']
         a = self.get_most_stable(self.ternary[0], p)
         b = self.get_most_stable(self.ternary[1], p)
         c = self.get_most_stable(self.ternary[2], p)
-        a = abc[0]*a
-        b = abc[1]*b
-        c = abc[2]*c
+        a = pabc[0]*a
+        b = pabc[1]*b
+        c = pabc[2]*c
         phase = self.data[phase][poly]['H'][p]
-        enthalpy = (phase-a-b-c)/num_of_molecules
+        enthalpy = (phase-a-b-c) / (num_of_molecules*pabc[3])
         return enthalpy
 
     # returns lowest value of enthalpy

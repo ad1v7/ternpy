@@ -15,6 +15,7 @@ from ternpy.utils.stoichbalancer import balance
 # sort colorbar issues
 # docstrings and unit test...
 # TODO: Sort class dependancies, use inheritance to simplify __init__
+EPSILON = 1e-12
 
 
 class ConvexHullData:
@@ -90,13 +91,13 @@ class PlotConvexHull:
         # when convex hull z value is close to 0
         self.levels = np.append(np.arange(self.CHD.minz, -0, 5e-4),
                                 [-1e-8, -1e-9, -0])
-        self.labels = self.get_latex_chem_formulas(['MgO', 'SiO2', 'H2O'])
+        self.labels = self.get_latex_chem_formulas(['O', 'H', 'Mg'])
 
     def savefigure(self, filename):
         savefile = os.path.basename(filename)
         savefile = os.path.splitext(savefile)[0] + '.png'
         fname = self.newdir + '/' + savefile
-        plt.savefig(fname, bbox_inches='tight', dpi=300)
+        plt.savefig(fname, bbox_inches='tight', dpi=200)
         print (os.path.basename(filename) +
                " output saved to " + fname)
 
@@ -114,9 +115,6 @@ class PlotConvexHull:
         return ['$\mathregular{'+k+'}$' for k in labels]
 
     def plot_all(self):
-        print(len(self.CHD.data))
-        print(len(self.CHD.data))
-        print(len(self.CHD.data))
         for i in range(len(self.CHD.data)):
             data = self.CHD.data[i]
             hull_data = self.CHD.convex_hulls[i]
@@ -186,6 +184,15 @@ class FindMetastable:
         self.metastable = self.get_all_metastable()
         self.triangles = self.get_all_triangles()
         self.pressures = self.get_press_range()
+        # keep only data for pressures in self.pressures
+        for phase in self.datadict:
+            for poly in self.datadict[phase]:
+                matrix = self.datadict[phase][poly]
+                newmatrix = []
+                for line in matrix:
+                    if line[0] in self.pressures:
+                        newmatrix.append(line)
+                self.datadict[phase][poly] = np.array(newmatrix)
 
     # returns array of convex hull vertices
     def get_all_vertices(self):
@@ -280,14 +287,16 @@ class FindMetastable:
     def is_collinear2D(self, A, B, C):
         x1, y1 = B[0] - A[0], B[1] - A[1]
         x2, y2 = C[0] - A[0], C[1] - A[1]
-        return abs(x1 * y2 - x2 * y1) == 0
+        #return abs(x1 * y2 - x2 * y1) == 0
+        return abs(x1 * y2 - x2 * y1) < EPSILON
 
     # returns true if point is on AB line segment
     # in 2D (ignore z coordinate)
     def is_point_between(self, point, A, B):
         dotproduct = np.dot(B-A, point-A)
         sqlengthAB = (B[0]-A[0])*(B[0]-A[0]) + (B[1]-A[1])*(B[1]-A[1])
-        return (abs(np.cross(A-point, B-point)) == 0 and
+        #return (abs(np.cross(A-point, B-point)) == 0 and
+        return (abs(np.cross(A-point, B-point)) < EPSILON and
                 dotproduct > 0 and sqlengthAB > dotproduct)
 
     # returns true if point is found on one of triangle
@@ -370,10 +379,10 @@ class FindMetastable:
                         + ' + ' +
                         str(dec[2]) + ' * ' + self.xy_to_name(triangle[2])
                         + ' + ' +
-                        str(dec[3]) + ' * ' + self.xy_to_name(triangle[3]) +
-                        '\n Distance to plane: ' +
-                        str(self.point_distance_to_plane(point, triangle[1:]))
-                        + '\n Relative enthalpy (eV): ' + rel_h +
+                        str(dec[3]) + ' * ' + self.xy_to_name(triangle[3])
+                        #+ '\n Distance to plane: ' +
+                        #str(self.point_distance_to_plane(point, triangle[1:]))
+                        + '\n Relative enthalpy (eV[f.u]): ' + rel_h +
                         '\n')
             elif linebool:
                 phasenames = [self.xy_to_name(pt) for pt in line]
@@ -383,13 +392,13 @@ class FindMetastable:
                         + ' -> ' +
                         str(dec[1]) + ' * ' + self.xy_to_name(line[1])
                         + ' + ' +
-                        str(dec[2]) + ' * ' + self.xy_to_name(line[2]) +
-                        '\n Distance to line: ' +
-                        str(self.point_distance_to_line(point, line[1:]))
-                        + '\n Relative enthalpy (eV): ' + rel_h +
+                        str(dec[2]) + ' * ' + self.xy_to_name(line[2])
+                        #+ '\n Distance to line: ' +
+                        #str(self.point_distance_to_line(point, line[1:]))
+                        + '\n Relative enthalpy (eV[f.u.]): ' + rel_h +
                         '\n')
-                # this is because line can be shared by more than one triangle
 
+    # this is because line can be shared by more than one triangle
     # loop over input files
     # prints to meta directory *.meta files
     # each file contains decomposition reaction
@@ -438,12 +447,12 @@ class FindMetastable:
         phasedict = self.get_phase_data(phasenames)
         test, composition = balance(phasedict, lhs)
         phase_h = composition[0] * self.get_most_stable(phasenames[0], press)
-        num_of_molecules = sum(composition)
+        num_of_molecules = sum(composition[1:])
         constituents_h = 0.
         for i in range(1, len(phasenames)):
             constituents_h += (composition[i] *
                                self.get_most_stable(phasenames[i], press))
-        return ((phase_h - constituents_h) / num_of_molecules), composition
+        return ((phase_h - constituents_h) / (composition[0])), composition
 
     # TODO
     # THIS IS !almost! EXACT COPY FROM INPUTGENERATOR
@@ -472,7 +481,7 @@ class FindMetastable:
         direc = os.path.dirname(self.projectdir) + '/energies/'
         for ph in self.tern_phases.keys():
             try:
-                d[ph] = {poly: np.genfromtxt(direc+poly+'.dat', names=True) for
+                d[ph] = {poly: np.genfromtxt(direc+ph+'-'+poly+'.dat', names=True) for
                          poly in self.tern_phases[ph]['structures']}
             except IOError:
                 print('no file for', ph)

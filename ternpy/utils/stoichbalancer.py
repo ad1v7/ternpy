@@ -100,6 +100,7 @@ def balance_engine(mtx):
         # must be converted to identity matrix
         for i in range(rows-1, rows-1-counter, -1):
             mtx[i, i] = 1
+            
     elif cols > rows:
         rank = l.matrix_rank(mtx)
         nullity = cols - rank
