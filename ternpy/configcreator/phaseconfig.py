@@ -217,9 +217,11 @@ def create_datafiles(configfile, jobdir, outcar="OUTCAR", poscar="POSCAR"):
 
 
 
-def extract(phaselist, dftdir, projdir=".", poscar="POSCAR", outcar="OUTCAR"):
+def extract(phaselist, dftdir, poscar="POSCAR", outcar="OUTCAR"):
     def all_same(items):
         return all(x == items[0] for x in items)
+
+    projdir = os.path.dirname(os.path.realpath(phaselist))
 
     phasedirdict = _get_phasedirdict(phaselist)
 
@@ -323,7 +325,7 @@ def extract(phaselist, dftdir, projdir=".", poscar="POSCAR", outcar="OUTCAR"):
     with open(cfgfile, "a") as f:
         # Write the path of the job output directory for future reference
         f.write("[Directories]\n")
-        f.write("\tdftdir=" + projdir + "\n")
+        f.write("\tdftdir=" + os.path.abspath(dftdir) + "\n")
         f.write("\tprojectdir=" + projdir + "\n")
         f.write("\n")
         for phase in phasedirdict:

@@ -4,7 +4,6 @@ ternpy
 Usage:
   ternpy hi
   ternpy config [((-p | --phaselist) FILE)] [((-j | --dftdir) PATH)]
-            [((-d | --projectdir) PROJECTDIR)]
   ternpy newternary (-c | --configfile) FILE
   ternpy tplot (-t | --ternconfig) FILE (-i | --input) INFILE...
   ternpy getmeta (-t | --ternconfig) FILE (-i | --input) INFILE...

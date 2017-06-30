@@ -16,9 +16,5 @@ class Config(Base):
             phaselist = 'phaselist.conf'
         if self.options['-j'] or self.options['--dftdir']:
             dftdir = self.options.get('PATH')
-        if self.options['-d'] or self.options['--projectdir']:
-            projectdir = self.options.get('PROJECTDIR')
-        else:
-            projectdir = '.'
 
-        phaseconfig.extract(phaselist, dftdir, projectdir)
+        phaseconfig.extract(phaselist, dftdir)
