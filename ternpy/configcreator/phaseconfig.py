@@ -217,7 +217,7 @@ def create_datafiles(configfile, jobdir, outcar="OUTCAR", poscar="POSCAR"):
 
 
 
-def extract(phaselist, dftdir, poscar="POSCAR", outcar="OUTCAR"):
+def extract(phaselist, dftdir, poscar="POSCAR", outcar="OUTCAR", phonopyfile="thermal_properties.yaml"):
     def all_same(items):
         return all(x == items[0] for x in items)
 
@@ -291,14 +291,29 @@ def extract(phaselist, dftdir, poscar="POSCAR", outcar="OUTCAR"):
                             pvterm = float(extractdata._vasp_pv(dirpath, outcar))
                             if pvterm is not None:
                                 pvterm /= fu_per_ucell
+                            free_energies = extractdata._free_energy(dirpath, phonopyfile)
+                            # Rescale to eV per formula unit to avoid having to do it later
+                            for temp in free_energies.keys():
+                                free_energies[temp] /= fu_per_ucell
 
-                            energies[phase][struct]["P"].append(float(press))
-                            energies[phase][struct]["T"].append(float('inf'))
-                            energies[phase][struct]["E"].append(float(intenergy))
-                            energies[phase][struct]["H"].append(float(enthalpy))
-                            energies[phase][struct]["PV"].append(float(pvterm))
-                            energies[phase][struct]["G"].append(float('inf'))
-                            energies[phase][struct]["F"].append(float('inf'))
+                            # Only write free energies if there are any
+                            if free_energies:
+                                for temp in free_energies.keys():
+                                    energies[phase][struct]["P"].append(float(press))
+                                    energies[phase][struct]["T"].append(temp)
+                                    energies[phase][struct]["E"].append(float(intenergy))
+                                    energies[phase][struct]["H"].append(float(enthalpy))
+                                    energies[phase][struct]["PV"].append(float(pvterm))
+                                    energies[phase][struct]["G"].append(float(enthalpy) + free_energies[temp])
+                                    energies[phase][struct]["F"].append(free_energies[temp])
+                            else:
+                                energies[phase][struct]["P"].append(float(press))
+                                energies[phase][struct]["T"].append(float('inf'))
+                                energies[phase][struct]["E"].append(float(intenergy))
+                                energies[phase][struct]["H"].append(float(enthalpy))
+                                energies[phase][struct]["PV"].append(float(pvterm))
+                                energies[phase][struct]["G"].append(float('inf'))
+                                energies[phase][struct]["F"].append(float('inf'))
 
                     # Check for duplicates
                     dup = [x for x in energies[phase][struct]["P"] if energies[phase][struct]["P"].count(x) >= 2]

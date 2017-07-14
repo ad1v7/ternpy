@@ -1,5 +1,10 @@
 from functools import reduce
 import os
+import yaml
+
+
+# Conversion factor for kJ/mol to eV
+KJMOL_TO_EV = 0.01036410
 
 
 # Figures out the chemical formula of a VASP calculation using POTCAR and OUTCAR.
@@ -152,12 +157,27 @@ def _vasp_press(dir, outcar="OUTCAR"):
     return press
 
 
-# TODO
-# Obtains a dict of free energies from a thermal_properties.yaml file.
-def _free_energy(dir):
-    pass
+# Obtains a dict of free energies from a thermal_properties.yaml file, mapping temperature to the corresponding free
+# energy in units of eV per unit cell.
+def _free_energy(dir, phonopyfile="thermal_properties.yaml"):
+    energy = {}
+
+    # Read yaml file for vibrational free energies
+    with open(dir + "/" + phonopyfile, 'r') as stream:
+        data_dict = yaml.load(stream)
+        data_dict = data_dict['thermal_properties']
+
+        for entry in data_dict:
+            tempstr = entry.get('temperature')
+            fenergystr = entry.get('free_energy')
+            temperature = float(tempstr)
+            fenergy = float(fenergystr) * KJMOL_TO_EV
+            energy[temperature] = fenergy
+
+    return energy
 
 
 if __name__ == "__main__":
-    print(_vasp_press("joboutput/Quartz/alpha-quartz/80", "OUTCAR"))
-    #print(vasp_chemformula("joboutput/Quartz/alpha-quartz/80", "OUTCAR", "POSCAR"))
+    # print(_vasp_press("joboutput/Quartz/alpha-quartz/80", "OUTCAR"))
+    # print(vasp_chemformula("joboutput/Quartz/alpha-quartz/80", "OUTCAR", "POSCAR"))
+    print(_free_energy("joboutput/Quartz/alpha-quartz/80"))

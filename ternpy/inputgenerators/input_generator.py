@@ -79,7 +79,7 @@ class InputGenerator:
                  self.ternary[1] + '-' +
                  self.ternary[2] + '.json')
         fname = self.projectdir + '/' + fname
-        print fname
+        print(fname)
         if not os.path.exists(self.projectdir):
             os.makedirs(self.projectdir)
         with open(fname, "w") as f:
